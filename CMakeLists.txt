@@ -11,6 +11,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/)
 # set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(ENABLE_SHARED_LIBRARY "enable shared library" OFF)
+option(ENABLE_SPDLOG_BUILD  "enable spdlog build" ON)
 option(ENABLE_JEMALLOC_BUILD "enable jemalloc build" ON)
 option(ENABLE_TESTING_BUILD "enable testing build" ON)
 option(ENABLE_BENCHMARK_BUILD "enable benchmark build" OFF)
@@ -27,6 +28,12 @@ if(ENABLE_JEMALLOC_BUILD)
   find_package(jemalloc REQUIRED)
   include_directories(${JEMALLOC_INCLUDE_DIR})
 endif()
+
+if(ENABLE_SPDLOG_BUILD)
+  add_subdirectory(deps/spdlog)
+  include_directories(deps/spdlog/include)
+endif()
+
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/include
@@ -48,6 +55,10 @@ add_library(rediscc STATIC
 
 if(ENABLE_JEMALLOC_BUILD)
   target_link_libraries(rediscc PRIVATE ${JEMALLOC_LIBRARY})
+endif()
+
+if(ENABLE_SPDLOG_BUILD)
+  target_link_libraries(rediscc PRIVATE spdlog::spdlog)
 endif()
 
 target_link_directories(rediscc PRIVATE
