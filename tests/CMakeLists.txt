@@ -1,8 +1,6 @@
 enable_testing()
 set(LINK_LIBRARIES rediscc gtest gtest_main)
 
-enable_testing()
-
 set(TESTS_OUTPUT_DIR ${CMAKE_BINARY_DIR}/bin/tests)
 
 file(MAKE_DIRECTORY ${TESTS_OUTPUT_DIR})

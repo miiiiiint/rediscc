@@ -6,27 +6,53 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/static)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/shared)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/)
 # set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(ENABLE_SHARED_LIBRARY "enable shared library" OFF)
+option(ENABLE_JEMALLOC_BUILD "enable jemalloc build" ON)
 option(ENABLE_TESTING_BUILD "enable testing build" ON)
 option(ENABLE_BENCHMARK_BUILD "enable benchmark build" OFF)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+if(ENABLE_JEMALLOC_BUILD)
+  include(cmake/FetchJemalloc.cmake)
+  fetch_jemalloc(${CMAKE_SOURCE_DIR}/deps/jemalloc)
+  
+  add_compile_definitions(USE_JEMALLOC)
+  add_compile_definitions(USE_LIBC=0)
+
+  find_package(jemalloc REQUIRED)
+endif()
+
 include_directories(
   ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/include/allocator
   ${CMAKE_SOURCE_DIR}/include/data_structs
 )
 
 set(REDISCC_DATA_STRUCTS_ROOT ${CMAKE_SOURCE_DIR}/include/data_structs)
 set(REDISCC_DATA_STRUCTS_SRC ${CMAKE_SOURCE_DIR}/src/data_structs)
 
+
+set(REDISCC_ALLOCATOR_ROOT ${CMAKE_SOURCE_DIR}/include/allocator)
+set(REDISCC_ALLOCATOR_SRC ${CMAKE_SOURCE_DIR}/src/allocator)
+
 add_library(rediscc STATIC
+  ${REDISCC_ALLOCATOR_SRC}/xmalloc.cc
   ${REDISCC_DATA_STRUCTS_SRC}/sds.cc
 )
+
+if(ENABLE_JEMALLOC_BUILD)
+  add_dependencies(rediscc jemalloc)
+  target_link_libraries(rediscc PRIVATE ${JEMALLOC_LIBRARY})
+endif()
+
 target_link_directories(rediscc PRIVATE
   ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/allocator
   ${CMAKE_SOURCE_DIR}/data_structs
 )
 
