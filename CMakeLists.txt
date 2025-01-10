@@ -32,6 +32,8 @@ endif()
 if(ENABLE_SPDLOG_BUILD)
   add_subdirectory(deps/spdlog)
   include_directories(deps/spdlog/include)
+
+  add_compile_definitions(USE_SPDLOG)
 endif()
 
 
