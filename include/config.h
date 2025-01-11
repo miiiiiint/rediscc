@@ -23,7 +23,6 @@
 #    define REDISCC_DEBUG spdlog::debug
 #    define REDISCC_WARN  spdlog::warn
 #    define REDISCC_ERROR spdlog::error
-#    define REDISCC_FATAL spdlog::fatal
 
 #  endif
 #endif
