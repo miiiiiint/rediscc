@@ -13,10 +13,9 @@ TEST( XMALLOC, AllocateValidMemory ) {
   void*  ptr  = xmalloc( size );
 
   ASSERT_NE( ptr, nullptr ) << "xmalloc failed to allocate memory";
-  EXPECT_EQ( xmalloc_size( ptr ), size )
-    << "Allocated size does not match requested size";
+  EXPECT_EQ( xmalloc_size( ptr ), size ) << "Allocated size does not match requested size";
 
-  xfree( ptr ); // Ensure it can be freed without errors
+  xfree( ptr );  // Ensure it can be freed without errors
 }
 
 TEST( XMALLOC, AllocateZeroBytes ) {
@@ -25,10 +24,9 @@ TEST( XMALLOC, AllocateZeroBytes ) {
 
   // Behavior may vary based on implementation; check if a non-null pointer is returned
   EXPECT_NE( ptr, nullptr ) << "xmalloc failed to handle zero-byte allocation";
-  EXPECT_EQ( xmalloc_size( ptr ), sizeof( int64_t ) )
-    << "xmalloc should allocate zero bytes";
+  EXPECT_EQ( xmalloc_size( ptr ), sizeof( int64_t ) ) << "xmalloc should allocate zero bytes";
 
-  xfree( ptr ); // Ensure it can be freed safely
+  xfree( ptr );  // Ensure it can be freed safely
 }
 
 TEST( XMALLOC, FreeNullPointer ) {
@@ -48,8 +46,7 @@ TEST( XMALLOC, AllocateAndWriteMemory ) {
   memset( ptr, 0xAB, size );
   uint8_t* bytes = static_cast< uint8_t* >( ptr );
   for ( size_t i = 0; i < size; ++i ) {
-    EXPECT_EQ( bytes[ i ], 0xAB )
-      << "Memory write/read mismatch at index " << i;
+    EXPECT_EQ( bytes[ i ], 0xAB ) << "Memory write/read mismatch at index " << i;
   }
 
   xfree( ptr );
@@ -66,8 +63,8 @@ TEST( XMALLOC, RepeatedAllocations ) {
     allocations.push_back( ptr );
   }
 
-  for ( void* ptr: allocations ) {
-    xfree( ptr ); // Free all allocated memory
+  for ( void* ptr : allocations ) {
+    xfree( ptr );  // Free all allocated memory
   }
 }
 
@@ -90,13 +87,12 @@ TEST( XMALLOC, FreeMultipleTimes ) {
 
   ASSERT_NE( ptr, nullptr ) << "xmalloc failed to allocate memory";
 
-  xfree( ptr ); // Free once
-  ASSERT_NO_THROW( xfree( ptr ) )
-    << "xfree should handle double-free gracefully";
+  xfree( ptr );  // Free once
+  ASSERT_NO_THROW( xfree( ptr ) ) << "xfree should handle double-free gracefully";
 }
 
 TEST( XMALLOC, AllocateLargeMemoryBlock ) {
-  size_t large_size = 1024 * 1024 * 10; // 10 MB
+  size_t large_size = 1024 * 1024 * 10;  // 10 MB
   void*  ptr        = xmalloc( large_size );
 
   ASSERT_NE( ptr, nullptr ) << "xmalloc failed to allocate large memory block";
@@ -115,8 +111,7 @@ TEST( XMALLOC, ReallocateMemory ) {
   size_t new_size = 256;
   ptr             = xrealloc( ptr, new_size );
   ASSERT_NE( ptr, nullptr ) << "xrealloc failed to reallocate memory";
-  EXPECT_GE( xmalloc_size( ptr ), new_size )
-    << "Reallocated memory size is less than requested";
+  EXPECT_GE( xmalloc_size( ptr ), new_size ) << "Reallocated memory size is less than requested";
 
   xfree( ptr );
 }
@@ -126,10 +121,8 @@ TEST( XMALLOC, ReallocateNullPointer ) {
   size_t size = 64;
   void*  ptr  = xrealloc( nullptr, size );
 
-  ASSERT_NE( ptr, nullptr )
-    << "xrealloc failed to allocate memory for null pointer";
-  EXPECT_GE( xmalloc_size( ptr ), size )
-    << "Allocated memory size is less than requested";
+  ASSERT_NE( ptr, nullptr ) << "xrealloc failed to allocate memory for null pointer";
+  EXPECT_GE( xmalloc_size( ptr ), size ) << "Allocated memory size is less than requested";
 
   xfree( ptr );
 }
@@ -141,8 +134,7 @@ TEST( XMALLOC, ReallocateToZero ) {
 
   // Reallocating to size 0 should free the memory and return nullptr
   void* new_ptr = xrealloc( ptr, 0 );
-  EXPECT_EQ( new_ptr, nullptr )
-    << "xrealloc should return nullptr when reallocating to zero size";
+  EXPECT_EQ( new_ptr, nullptr ) << "xrealloc should return nullptr when reallocating to zero size";
 }
 
 TEST( XMALLOC, TryXmallocUsableMemory ) {
@@ -161,8 +153,7 @@ TEST( XMALLOC, ExtendToUsable ) {
   void*  ptr  = xmalloc( size );
 
   void* extended_ptr = extend_to_usable( ptr, size );
-  EXPECT_EQ( ptr, extended_ptr )
-    << "extend_to_usable should return the same pointer";
+  EXPECT_EQ( ptr, extended_ptr ) << "extend_to_usable should return the same pointer";
 
   xfree( ptr );
 }
@@ -175,16 +166,19 @@ TEST( XMALLOC, MultiThreadedAllocations ) {
   auto worker = []() {
     for ( int i = 0; i < allocations_per_thread; ++i ) {
       void* ptr = xmalloc( size );
-      ASSERT_NE( ptr, nullptr )
-        << "xmalloc failed in multi-threaded allocation";
+      ASSERT_NE( ptr, nullptr ) << "xmalloc failed in multi-threaded allocation";
       xfree( ptr );
     }
   };
 
   std::vector< std::thread > threads;
-  for ( int i = 0; i < num_threads; ++i ) { threads.emplace_back( worker ); }
+  for ( int i = 0; i < num_threads; ++i ) {
+    threads.emplace_back( worker );
+  }
 
-  for ( auto& thread: threads ) { thread.join(); }
+  for ( auto& thread : threads ) {
+    thread.join();
+  }
 }
 
 GTEST_API_ int main( int argc, char* argv[] ) {

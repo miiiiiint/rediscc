@@ -10,22 +10,27 @@ TEST( ATOMIC, increase ) {
 }
 
 TEST( ATOMIC, multi_increase ) {
-  std::atomic< int > value{ 0 };
+  std::atomic< int > value { 0 };
   constexpr int      num_threads = 10;
   constexpr int      increment   = 100;
 
   auto worker = [ & ]() {
-    for ( int i = 0; i < increment; ++i ) { atomic_inc( value, 1 ); }
+    for ( int i = 0; i < increment; ++i ) {
+      atomic_inc( value, 1 );
+    }
   };
 
   std::vector< std::thread > threads;
-  for ( int i = 0; i < num_threads; ++i ) { threads.emplace_back( worker ); }
+  for ( int i = 0; i < num_threads; ++i ) {
+    threads.emplace_back( worker );
+  }
 
-  for ( auto& thread: threads ) { thread.join(); }
+  for ( auto& thread : threads ) {
+    thread.join();
+  }
 
   EXPECT_EQ( value.load(), num_threads * increment );
 }
-
 
 TEST( ATOMIC, get_inc ) {
   std::atomic< int32_t > var = 10;
@@ -79,12 +84,12 @@ TEST( ATOMIC, flag_get_set ) {
   std::atomic< int32_t > var = 0;
   int32_t                old_value;
   atomic_flag_get_set( var, old_value );
-  EXPECT_EQ( old_value, 0 ); // Initial value
-  EXPECT_EQ( var, 1 );       // After setting flag
+  EXPECT_EQ( old_value, 0 );  // Initial value
+  EXPECT_EQ( var, 1 );        // After setting flag
 }
 
 TEST( ATOMIC, multi_thread_get_inc ) {
-  std::atomic< int > var{ 0 };
+  std::atomic< int > var { 0 };
   constexpr int      num_threads = 10;
   constexpr int      increment   = 100;
 
@@ -96,15 +101,19 @@ TEST( ATOMIC, multi_thread_get_inc ) {
   };
 
   std::vector< std::thread > threads;
-  for ( int i = 0; i < num_threads; ++i ) { threads.emplace_back( worker ); }
+  for ( int i = 0; i < num_threads; ++i ) {
+    threads.emplace_back( worker );
+  }
 
-  for ( auto& thread: threads ) { thread.join(); }
+  for ( auto& thread : threads ) {
+    thread.join();
+  }
 
   EXPECT_EQ( var.load(), num_threads * increment );
 }
 
 TEST( ATOMIC, multi_thread_inc_get ) {
-  std::atomic< int > var{ 0 };
+  std::atomic< int > var { 0 };
   constexpr int      num_threads = 10;
   constexpr int      increment   = 100;
 
@@ -116,9 +125,13 @@ TEST( ATOMIC, multi_thread_inc_get ) {
   };
 
   std::vector< std::thread > threads;
-  for ( int i = 0; i < num_threads; ++i ) { threads.emplace_back( worker ); }
+  for ( int i = 0; i < num_threads; ++i ) {
+    threads.emplace_back( worker );
+  }
 
-  for ( auto& thread: threads ) { thread.join(); }
+  for ( auto& thread : threads ) {
+    thread.join();
+  }
 
   EXPECT_EQ( var.load(), num_threads * increment );
 }
