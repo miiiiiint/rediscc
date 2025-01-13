@@ -1,3 +1,4 @@
+include(CTest)
 enable_testing()
 set(LINK_LIBRARIES rediscc gtest gtest_main)
 
@@ -29,7 +30,11 @@ foreach(TEST_FILE ${TEST_SOURCES})
         RUNTIME_OUTPUT_DIRECTORY ${TESTS_OUTPUT_DIR})
 
     add_test(
-        NAME ${TARGET_NAME} 
-        COMMAND valgrind --leak-check=full --track-origins=yes --error-exitcode=1
-            ${TARGET_NAME} 2>&1 | tee ${CMAKE_BINARY_DIR}/valgrind_output.log)
+        NAME ${TARGET_NAME}
+        COMMAND /bin/bash -c "
+            ulimit -n 65536 && mkdir -p ${CMAKE_BINARY_DIR}/valgrind &&
+            valgrind --leak-check=full --track-origins=yes --error-exitcode=1 
+            ${TESTS_OUTPUT_DIR}/${TARGET_NAME} 2>&1 | tee ${CMAKE_BINARY_DIR}/valgrind/valgrind_output_${TEST_NAME}.log;
+            exit \${PIPESTATUS[0]}"
+    )
 endforeach()
