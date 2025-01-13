@@ -1,5 +1,6 @@
 #include "data_structs/sds.h"
 #include "gtest/gtest.h"
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 
@@ -21,6 +22,59 @@ TEST( SDS, Dumpilicate ) {
   EXPECT_EQ( s.length(), ds.length() );
   EXPECT_EQ( s.get_alloc(), ds.get_alloc() );
   EXPECT_EQ( s.get_avail(), ds.get_avail() );
+}
+
+TEST( SDS, Resize ) {
+  sds_8t s( "simple" );
+  EXPECT_EQ( s.length(), strlen( "simple" ) );
+  EXPECT_EQ( s.get_alloc(), strlen( "simple" ) + 1 );
+  EXPECT_EQ( s.get_avail(), 0 );
+
+  s.resize( 100, false );
+  EXPECT_EQ( s.length(), strlen( "simple" ) );
+  EXPECT_EQ( s.get_alloc(), 101 );
+  EXPECT_EQ( s.get_avail(), 101 - strlen( "simple" ) - 1 );
+  for ( size_t i = 0; i < s.length(); ++i ) {
+    EXPECT_EQ( s[ i ], "simple"[ i ] );
+  }
+
+  s.resize( 2, false );
+  EXPECT_EQ( s.length(), 2 );
+  EXPECT_EQ( s.get_alloc(), 3 );
+  EXPECT_EQ( s.get_avail(), 0 );
+  for ( size_t i = 0; i < s.length(); ++i ) {
+    EXPECT_EQ( s[ i ], "simple"[ i ] );
+  }
+}
+
+TEST( SDS, RemoveFreeSpace ) {
+  sds_8t s( "simple" );
+  EXPECT_EQ( s.length(), strlen( "simple" ) );
+  EXPECT_EQ( s.get_alloc(), strlen( "simple" ) + 1 );
+  EXPECT_EQ( s.get_avail(), 0 );
+
+  s.resize( 100, false );
+  EXPECT_EQ( s.length(), strlen( "simple" ) );
+  EXPECT_EQ( s.get_alloc(), 101 );
+  EXPECT_EQ( s.get_avail(), 101 - strlen( "simple" ) - 1 );
+  for ( size_t i = 0; i < s.length(); ++i ) {
+    EXPECT_EQ( s[ i ], "simple"[ i ] );
+  }
+
+  s.remove_free_space();
+  EXPECT_EQ( s.length(), strlen( "simple" ) );
+  EXPECT_EQ( s.get_alloc(), strlen( "simple" ) + 1 );
+  EXPECT_EQ( s.get_avail(), 0 );
+  for ( size_t i = 0; i < s.length(); ++i ) {
+    EXPECT_EQ( s[ i ], "simple"[ i ] );
+  }
+}
+
+TEST( SDS, CatLen ) {
+  sds_8t s( "simple" );
+  s.catlen( "123", 3 );
+  EXPECT_EQ( s.length(), strlen( "simple123" ) );
+  EXPECT_EQ( s.get_alloc(), strlen( "simple123" ) + 1 );
 }
 
 GTEST_API_ int main( int argc, char** argv ) {

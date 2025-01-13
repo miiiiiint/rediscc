@@ -46,6 +46,7 @@ XMALLOC_HELPER_2 XMALLOC_EXTERN void* xrealloc( void* ptr, size_t size );
 
 XMALLOC_EXTERN void  xfree( void* ptr );
 XMALLOC_EXTERN void* xmalloc_usable( size_t size, size_t* usable );
+XMALLOC_EXTERN void* xrealloc_usable( void* ptr, size_t size, size_t* usable );
 XMALLOC_EXTERN void* try_xmalloc_usable( size_t size, size_t* usable );
 
 XMALLOC_NOT_MALLOC_HELPER_2 XMALLOC_EXTERN void* extend_to_usable( void* ptr, size_t size );

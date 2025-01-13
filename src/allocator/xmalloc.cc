@@ -171,6 +171,7 @@ static inline void* try_xrealloc_usable_internal( void* ptr, size_t size, size_t
   size = xmalloc_size( ptr );
   update_xmalloc_stat_alloc( size );
   if ( usable ) *usable = size;
+  REDISCC_INFO( "xmalloc realloc usable size: {0}", usable ? *usable : 0 );
 
   return new_ptr;
 }
@@ -223,6 +224,28 @@ void* xmalloc( size_t size ) {
 void* xrealloc( void* ptr, size_t size ) {
   ptr = try_xrealloc_usable_internal( ptr, size, nullptr );
   if ( !ptr && size != 0 ) xmalloc_oom_handler( size );
+  return ptr;
+}
+
+/**
+ * @author chenmiao (chenmiao.ku@gmail.com)
+ * @date 2025-01-13
+ * @brief 重新分配指定大小的内存并返回实际可用的内存大小。
+ *
+ * 该函数用于重新分配指定大小的内存，并在重新分配失败时调用内存分配失败处理函数。
+ * 如果重新分配成功，返回新的内存指针，并可选地返回实际可用的内存大小。
+ *
+ * @param [in] ptr 原始内存指针
+ * @param [in] size 请求重新分配的内存大小
+ * @param [out] usable 可选参数，用于返回实际可用的内存大小
+ * @return void* 返回重新分配的内存指针，如果重新分配失败则调用 `xmalloc_oom_handler`
+ */
+void* xrealloc_usable( void* ptr, size_t size, size_t* usable ) {
+  size_t usable_size = 0;
+  ptr                = try_xrealloc_usable_internal( ptr, size, &usable_size );
+  if ( !ptr && size != 0 ) xmalloc_oom_handler( size );
+  ptr = extend_to_usable( ptr, usable_size );
+  if ( usable ) *usable = usable_size;
   return ptr;
 }
 
