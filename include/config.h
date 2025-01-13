@@ -19,10 +19,10 @@
 #  if __has_include( <spdlog/spdlog.h> )
 #    include <spdlog/spdlog.h>
 
-#    define REDISCC_INFO  spdlog::info
-#    define REDISCC_DEBUG spdlog::debug
-#    define REDISCC_WARN  spdlog::warn
-#    define REDISCC_ERROR spdlog::error
+#    define REDISCC_INFO( ... )  spdlog::info( __VA_ARGS__ )
+#    define REDISCC_DEBUG( ... ) spdlog::debug( __VA_ARGS__ )
+#    define REDISCC_WARN( ... )  spdlog::warn( __VA_ARGS__ )
+#    define REDISCC_ERROR( ... ) spdlog::error( __VA_ARGS__ )
 
 #  endif
 #endif
