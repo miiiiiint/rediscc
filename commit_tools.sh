@@ -19,6 +19,8 @@ get_emoji_code() {
         "hotfix") echo ":ambulance:" ;;
         "feat") echo ":sparkles:" ;;
         "docs") echo ":memo:" ;;
+        "chore") echo ":wrench:" ;;
+        "test") echo ":hammer:" ;;
         *) usage ;;
     esac
 }

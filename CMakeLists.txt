@@ -36,11 +36,6 @@ if(ENABLE_SPDLOG_BUILD)
   add_compile_definitions(USE_SPDLOG)
 endif()
 
-set(CMAKE_C_COMPILER /usr/bin/clang)
-set(CMAKE_CXX_COMPILER /usr/bin/clang++)
-set(CMAKE_CXX_COMPILER_VERSION 16)
-set(CMAKE_CXX_COMPILER_ID Clang)
-
 include_directories(
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/include/allocator
