@@ -17,7 +17,7 @@ body:
   - type: input
     id: clang-version
     attributes:
-      description: Enter the clang version you used during the compilation process
+      label: Enter the clang version you used during the compilation process
     validations:
       required: true
 
