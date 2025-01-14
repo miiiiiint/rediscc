@@ -23,7 +23,7 @@ body:
 
   # Env | OS Env
   - type: dropdown
-    id: env-vm-ver
+    id: osenv
     attributes:
       label: OS Env
       description: Select the operating system where rediscc is running
@@ -79,7 +79,7 @@ body:
 
   # Optional | Possible solution
   - type: textarea
-    id: logging
+    id: possible_solution
     attributes:
       label: Possible solution(Optional)
       description: |
