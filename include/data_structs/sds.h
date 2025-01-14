@@ -20,6 +20,7 @@
 #include <limits>
 #include <memory>
 #include <unistd.h>
+#include <vector>
 
 /**
  * @brief 用于在条件不满足时触发错误并终止程序
@@ -77,11 +78,23 @@ public:
     size_t init_len = ( init_str == nullptr ) ? 0 : strlen( init_str );
     new_length( init_str, init_len );
   }
+  sds_t( int64_t value );
+
   ~sds_t() {
     if ( buf_ ) {
       xfree( buf_ );
       buf_ = nullptr;
     }
+  }
+
+  auto operator<=>( const sds_t< SDSHDR_TYPE >& other ) const = default;
+
+  bool operator==( const sds_t< SDSHDR_TYPE >& other ) const {
+    return len_ == other.len_ && memcmp( buf_, other.buf_, len_ ) == 0;
+  }
+
+  bool operator<( const sds_t< SDSHDR_TYPE >& other ) const {
+    return len_ < other.len_ || ( len_ == other.len_ && memcpy( buf_, other.buf_, len_ ) < 0 );
   }
 
   uint8_t operator[]( size_t n ) {
@@ -188,6 +201,21 @@ public:
     len_         += len;
     buf_[ len_ ]  = '\0';
   }
+
+  void    cat( const char* t );
+  void    cat( const sds_t< SDSHDR_TYPE >& t );
+  void    cpy( const char* t, size_t len );
+  void    cpy( const char* t ) { cpy( t, strlen( t ) ); }
+  void    trim( const char* cset );
+  void    substr( size_t start, size_t len );
+  void    subrange( ssize_t start, ssize_t end );
+  int32_t compare( const sds_t< SDSHDR_TYPE >& t );
+
+  std::vector< sds_t< SDSHDR_TYPE > >
+       split( const char* s, ssize_t len, const char* sep, size_t sep_len );
+  void to_lower();
+  void to_upper();
+  void cat_repr( const char* p, size_t len );
 
   void clear() {
     len_      = 0;
