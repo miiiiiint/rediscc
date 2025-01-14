@@ -18,7 +18,7 @@ body:
 
   # Input | Possible approach
   - type: textarea
-    id: feature-content
+    id: possible_approach
     attributes:
       label: Possible solutions or approaches(Optional)
       description: |
