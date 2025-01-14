@@ -1,0 +1,93 @@
+name: Error Report
+description: An error was found during use
+title: '[Bug?]: '
+labels: [ "bug?" ]
+
+body:
+
+  # User's data
+  - type: markdown
+    attributes:
+      value: |
+        ## Environment Information 
+
+
+  # Env | Clang Version
+  - type: input
+    id: clang-version
+    attributes:
+      description: Enter the clang version you used during the compilation process
+    validations:
+      required: true
+
+
+  # Env | OS Env
+  - type: dropdown
+    id: env-vm-ver
+    attributes:
+      label: OS Env
+      description: Select the operating system where rediscc is running
+      options:
+        - Windows
+        - MacOS
+        - Linux
+        - Others(Please specify below)
+    validations:
+      required: true
+
+
+  # Input | Reproduce
+  - type: textarea
+    id: reproduce-steps
+    attributes:
+      label:  Reproduce
+      description: |
+        What steps do we need to take to reproduce the bug?
+    validations:
+      required: true
+
+  # Input | Expected result
+  - type: textarea
+    id: expected
+    attributes:
+      label: What is the expected result?
+    validations:
+      required: true
+
+  # Input | Actual result
+  - type: textarea
+    id: actual
+    attributes:
+      label: What is the actual result?
+    validations:
+      required: true
+
+  # Optional | Reproduce code
+  - type: textarea
+    id: reproduce-code
+    attributes:
+      label: Simple reproduction code(Optional)
+      render: C++
+
+  # Optional | Logging
+  - type: textarea
+    id: logging
+    attributes:
+      label: Logging info(Optional)
+      render: Shell
+
+
+  # Optional | Possible solution
+  - type: textarea
+    id: logging
+    attributes:
+      label: Possible solution(Optional)
+      description: |
+        Provide the solution you think might work
+
+
+  # Optional | Extra description
+  - type: textarea
+    id: extra-desc
+    attributes:
+      label: Extra description(Optional)

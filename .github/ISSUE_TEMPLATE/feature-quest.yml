@@ -1,0 +1,25 @@
+name: New Feature Proposal
+description: I would like to request a new feature.
+title: '[Feature Request]: '
+labels: ["enhancement"]
+
+body:
+
+  # Input | Feature Content
+  - type: textarea
+    id: feature-content
+    attributes:
+      label: New feature request
+      description: |
+        Please describe your requirements in as much detail as possible.
+    validations:
+      required: true
+
+
+  # Input | Possible approach
+  - type: textarea
+    id: feature-content
+    attributes:
+      label: Possible solutions or approaches(Optional)
+      description: |
+        Provide the  solutions or approaches you think might work.
