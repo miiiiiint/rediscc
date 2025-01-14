@@ -13,6 +13,7 @@
 #include "config.h"
 #include "jemalloc/jemalloc.h"
 #include "xmalloc.h"
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -202,19 +203,73 @@ public:
     buf_[ len_ ]  = '\0';
   }
 
-  void    cat( const char* t );
-  void    cat( const sds_t< SDSHDR_TYPE >& t );
-  void    cpy( const char* t, size_t len );
-  void    cpy( const char* t ) { cpy( t, strlen( t ) ); }
-  void    trim( const char* cset );
-  void    substr( size_t start, size_t len );
-  void    subrange( ssize_t start, ssize_t end );
-  int32_t compare( const sds_t< SDSHDR_TYPE >& t );
+  void cat( const char* t ) { catlen( t, strlen( t ) ); }
 
+  void cat( const sds_t< SDSHDR_TYPE >& t ) { catlen( t.data(), t.length() ); }
+
+  void cpy( const char* t, size_t len ) {
+    if ( alloc_ < len ) {
+      buf_ = make_room( len );
+      sds_assert( buf_ != nullptr, "make_room failed!" );
+    }
+    memcpy( buf_, t, len );
+    len_         = len;
+    buf_[ len_ ] = '\0';
+  }
+
+  void cpy( const char* t ) { cpy( t, strlen( t ) ); }
+
+  // TODO
+  void trim( const char* cset );
+
+  sds_t< SDSHDR_TYPE > substr( size_t start, size_t len ) {
+    sds_assert( start > len_,
+                "substr start index must be less than length(start: {} > length: {})",
+                start,
+                len_ );
+    sds_assert( len > len_ - start,
+                "substr len must be less than length - start(len: {} > length - start: {})",
+                len,
+                len_ - start );
+
+    std::unique_ptr< char > buf( new char[ len + 1 ]() );
+    memcpy( buf.get(), buf_ + start, len );
+    buf.get()[ len ] = '\0';
+    return sds_t< SDSHDR_TYPE >( buf.get() );
+  }
+
+  sds_t< SDSHDR_TYPE > subrange( ssize_t start, ssize_t end ) {
+    sds_assert( len_ == 0, "subrange cannot sub" );
+    size_t new_len;
+    if ( start < 0 ) start = len_ + start;
+    if ( end < 0 ) end = len_ + end;
+    new_len = ( start > end ) ? 0 : ( end - start ) + 1;
+    return substr( start, new_len );
+  }
+
+  int32_t compare( const sds_t< SDSHDR_TYPE >& t ) {
+    if ( *this < t ) return -1;
+    if ( *this > t ) return 1;
+    return 0;
+  }
+
+  // TODO
   std::vector< sds_t< SDSHDR_TYPE > >
-       split( const char* s, ssize_t len, const char* sep, size_t sep_len );
-  void to_lower();
-  void to_upper();
+  split( const char* s, ssize_t len, const char* sep, size_t sep_len );
+
+  void tolower() {
+    for ( size_t i = 0; i < len_; ++i ) {
+      buf_[ i ] = ::tolower( buf_[ i ] );
+    }
+  }
+
+  void toupper() {
+    for ( size_t i = 0; i < len_; ++i ) {
+      buf_[ i ] = ::toupper( buf_[ i ] );
+    }
+  }
+
+  // TODO
   void cat_repr( const char* p, size_t len );
 
   void clear() {
