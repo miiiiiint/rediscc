@@ -108,6 +108,27 @@ static void update_xmalloc_stat_free( int64_t num ) {
 /**
  * @author chenmiao (chenmiao.ku@gmail.com)
  * @date 2025-01-11
+ * @brief 默认的内存分配失败处理函数。
+ *
+ * 该函数在内存分配失败时被调用，输出错误信息并终止程序。
+ *
+ * @param [in] size 请求分配的内存大小
+ */
+static void xmalloc_default_oom( size_t size ) {
+  REDISCC_ERROR( "xmalloc: Out of memory trying to allocate {0} bytes", size );
+  fflush( stderr );
+  abort();
+}
+
+static std::function< void( size_t ) > xmalloc_oom_handler
+    = xmalloc_default_oom;  ///< 内存分配失败处理函数
+
+                            /*************************************
+                             *          XMALLOC IMPL
+                             ************************************/
+/**
+ * @author chenmiao (chenmiao.ku@gmail.com)
+ * @date 2025-01-11
  * @brief 尝试分配内存并返回可用的内存大小。
  *
  * 该函数用于分配指定大小的内存，并更新内存使用统计信息。
@@ -129,6 +150,120 @@ static inline void* try_xmalloc_usable_internal( size_t size, size_t* usable ) {
   return ptr;
 }
 
+/**
+ * @author chenmiao (chenmiao.ku@gmail.com)
+ * @date 2025-01-11
+ * @brief 尝试分配内存并返回可用的内存大小。
+ *
+ * 该函数用于分配指定大小的内存，并返回实际可用的内存大小。
+ *
+ * @param [in] size 请求分配的内存大小
+ * @param [out] usable 用于返回实际可用的内存大小
+ * @return void* 返回分配的内存指针，如果分配失败则返回 `nullptr`
+ */
+void* try_xmalloc_usable( size_t size, size_t* usable ) {
+  size_t usable_size = 0;
+  void*  ptr         = try_xmalloc_usable_internal( size, &usable_size );
+  ptr                = extend_to_usable( ptr, usable_size );
+  if ( usable ) *usable = usable_size;
+  return ptr;
+}
+
+void* try_xmalloc( size_t size ) {
+  void* ptr = try_xmalloc_usable_internal( size, nullptr );
+  return ptr;
+}
+
+/**
+ * @author chenmiao (chenmiao.ku@gmail.com)
+ * @date 2025-01-11
+ * @brief 分配指定大小的内存并返回实际可用的内存大小。
+ *
+ * 该函数用于分配指定大小的内存，并在分配失败时调用内存分配失败处理函数。
+ * 如果分配成功，返回分配的内存指针，并可选地返回实际可用的内存大小。
+ *
+ * @param [in] size 请求分配的内存大小
+ * @param [out] usable 可选参数，用于返回实际可用的内存大小
+ * @return void* 返回分配的内存指针，如果分配失败则调用 `xmalloc_oom_handler`
+ */
+void* xmalloc_usable( size_t size, size_t* usable ) {
+  size_t usable_size = 0;
+  void*  ptr         = try_xmalloc_usable_internal( size, &usable_size );
+  if ( !ptr ) xmalloc_oom_handler( size );
+  ptr = extend_to_usable( ptr, usable_size );
+  if ( usable ) *usable = usable_size;
+  return ptr;
+}
+
+/**
+ * @author chenmiao (chenmiao.ku@gmail.com)
+ * @date 2025-01-11
+ * @brief 分配指定大小的内存。
+ *
+ * 该函数用于分配指定大小的内存，并在分配失败时调用内存分配失败处理函数。
+ *
+ * @param [in] size 请求分配的内存大小
+ * @return void* 返回分配的内存指针，如果分配失败则调用 `xmalloc_oom_handler`
+ */
+void* xmalloc( size_t size ) {
+  void* ptr = try_xmalloc_usable_internal( size, nullptr );
+  if ( !ptr ) xmalloc_oom_handler( size );
+  return ptr;
+}
+
+/*************************************
+ *          XCALLOC IMPL
+ ************************************/
+static inline void* try_xcalloc_usable_internal( size_t size, size_t* usable ) {
+  if ( size >= SIZE_MAX / 2 ) return nullptr;
+  void* ptr = calloc( 1, malloc_min_size( size ) + PREFIX_SIZE );
+
+  if ( !ptr ) return nullptr;
+  size = xmalloc_size( ptr );
+  update_xmalloc_stat_alloc( size );
+  if ( usable ) *usable = size;
+  return ptr;
+}
+
+void* try_xcalloc_usable( size_t size, size_t* usable ) {
+  size_t usable_size = 0;
+  void*  ptr         = try_xcalloc_usable_internal( size, &usable_size );
+  ptr                = extend_to_usable( ptr, usable_size );
+  if ( usable ) *usable = usable_size;
+  return ptr;
+}
+
+void* try_xcalloc( size_t size ) {
+  void* ptr = try_xcalloc_usable_internal( size, nullptr );
+  if ( !ptr ) xmalloc_oom_handler( size );
+  return ptr;
+}
+
+void* xcalloc_usable( size_t size, size_t* usable ) {
+  size_t usable_size = 0;
+  void*  ptr         = try_xcalloc_usable_internal( size, &usable_size );
+  ptr                = extend_to_usable( ptr, usable_size );
+  if ( usable ) *usable = usable_size;
+  return ptr;
+}
+
+void* xcalloc_num( size_t num, size_t size ) {
+  if ( ( size == 0 ) || ( num > SIZE_MAX / size ) ) {
+    xmalloc_oom_handler( SIZE_MAX );
+  }
+  void* ptr = try_xcalloc_usable_internal( size, nullptr );
+  if ( !ptr ) xmalloc_oom_handler( num * size );
+  return ptr;
+}
+
+void* xcalloc( size_t size ) {
+  void* ptr = try_xcalloc_usable_internal( size, nullptr );
+  return ptr;
+}
+
+/*************************************
+ *          XREALLOC IMPL
+ ************************************/
 /**
  * @author chenmiao (chenmiao.ku@gmail.com)
  * @date 2025-01-11
@@ -184,54 +319,16 @@ static inline void* try_xrealloc_usable_internal( void* ptr, size_t size, size_t
   return new_ptr;
 }
 
-/**
- * @author chenmiao (chenmiao.ku@gmail.com)
- * @date 2025-01-11
- * @brief 默认的内存分配失败处理函数。
- *
- * 该函数在内存分配失败时被调用，输出错误信息并终止程序。
- *
- * @param [in] size 请求分配的内存大小
- */
-static void xmalloc_default_oom( size_t size ) {
-  REDISCC_ERROR( "xmalloc: Out of memory trying to allocate {0} bytes", size );
-  fflush( stderr );
-  abort();
-}
-
-static std::function< void( size_t ) > xmalloc_oom_handler
-    = xmalloc_default_oom;  ///< 内存分配失败处理函数
-
-/**
- * @author chenmiao (chenmiao.ku@gmail.com)
- * @date 2025-01-11
- * @brief 分配指定大小的内存。
- *
- * 该函数用于分配指定大小的内存，并在分配失败时调用内存分配失败处理函数。
- *
- * @param [in] size 请求分配的内存大小
- * @return void* 返回分配的内存指针，如果分配失败则调用 `xmalloc_oom_handler`
- */
-void* xmalloc( size_t size ) {
-  void* ptr = try_xmalloc_usable_internal( size, nullptr );
-  if ( !ptr ) xmalloc_oom_handler( size );
+void* try_xrealloc_usable( void* ptr, size_t size, size_t* usable ) {
+  size_t usable_size = 0;
+  ptr                = try_xrealloc_usable_internal( ptr, size, &usable_size );
+  ptr                = extend_to_usable( ptr, usable_size );
+  if ( usable ) *usable = usable_size;
   return ptr;
 }
 
-/**
- * @author chenmiao (chenmiao.ku@gmail.com)
- * @date 2025-01-11
- * @brief 重新分配指定大小的内存。
- *
- * 该函数用于重新分配指定大小的内存，并在重新分配失败时调用内存分配失败处理函数。
- *
- * @param [in] ptr 原始内存指针
- * @param [in] size 请求重新分配的内存大小
- * @return void* 返回重新分配的内存指针，如果重新分配失败则调用 `xmalloc_oom_handler`
- */
-void* xrealloc( void* ptr, size_t size ) {
+void* try_xrealloc( void* ptr, size_t size ) {
   ptr = try_xrealloc_usable_internal( ptr, size, nullptr );
-  if ( !ptr && size != 0 ) xmalloc_oom_handler( size );
   return ptr;
 }
 
@@ -260,6 +357,23 @@ void* xrealloc_usable( void* ptr, size_t size, size_t* usable ) {
 /**
  * @author chenmiao (chenmiao.ku@gmail.com)
  * @date 2025-01-11
+ * @brief 重新分配指定大小的内存。
+ *
+ * 该函数用于重新分配指定大小的内存，并在重新分配失败时调用内存分配失败处理函数。
+ *
+ * @param [in] ptr 原始内存指针
+ * @param [in] size 请求重新分配的内存大小
+ * @return void* 返回重新分配的内存指针，如果重新分配失败则调用 `xmalloc_oom_handler`
+ */
+void* xrealloc( void* ptr, size_t size ) {
+  ptr = try_xrealloc_usable_internal( ptr, size, nullptr );
+  if ( !ptr && size != 0 ) xmalloc_oom_handler( size );
+  return ptr;
+}
+
+/**
+ * @author chenmiao (chenmiao.ku@gmail.com)
+ * @date 2025-01-11
  * @brief 释放指定的内存。
  *
  * 该函数用于释放指定的内存，并更新内存使用统计信息。
@@ -270,54 +384,6 @@ void xfree( void* ptr ) {
   if ( ptr == nullptr ) return;
   update_xmalloc_stat_free( xmalloc_size( ptr ) );
   free( ptr );
-}
-
-/**
- * @author chenmiao (chenmiao.ku@gmail.com)
- * @date 2025-01-11
- * @brief 分配指定大小的内存并返回实际可用的内存大小。
- *
- * 该函数用于分配指定大小的内存，并在分配失败时调用内存分配失败处理函数。
- * 如果分配成功，返回分配的内存指针，并可选地返回实际可用的内存大小。
- *
- * @param [in] size 请求分配的内存大小
- * @param [out] usable 可选参数，用于返回实际可用的内存大小
- * @return void* 返回分配的内存指针，如果分配失败则调用 `xmalloc_oom_handler`
- */
-void* xmalloc_usable( size_t size, size_t* usable ) {
-  size_t usable_size = 0;
-  void*  ptr         = try_xmalloc_usable_internal( size, &usable_size );
-  if ( !ptr ) xmalloc_oom_handler( size );
-  ptr = extend_to_usable( ptr, usable_size );
-  if ( usable ) *usable = usable_size;
-  return ptr;
-}
-
-/**
- * @author chenmiao (chenmiao.ku@gmail.com)
- * @date 2025-01-11
- * @brief 尝试分配内存并返回可用的内存大小。
- *
- * 该函数用于分配指定大小的内存，并返回实际可用的内存大小。
- *
- * @param [in] size 请求分配的内存大小
- * @param [out] usable 用于返回实际可用的内存大小
- * @return void* 返回分配的内存指针，如果分配失败则返回 `nullptr`
- */
-void* try_xmalloc_usable( size_t size, size_t* usable ) {
-  size_t usable_size = 0;
-  void*  ptr         = try_xmalloc_usable_internal( size, &usable_size );
-  ptr                = extend_to_usable( ptr, usable_size );
-  if ( usable ) *usable = usable_size;
-  return ptr;
-}
-
-void* try_xrealloc_usable( void* ptr, size_t size, size_t* usable ) {
-  size_t usable_size = 0;
-  ptr                = try_xrealloc_usable_internal( ptr, size, &usable_size );
-  ptr                = extend_to_usable( ptr, usable_size );
-  if ( usable ) *usable = usable_size;
-  return ptr;
 }
 
 /**
