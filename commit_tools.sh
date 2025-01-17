@@ -4,7 +4,7 @@
 
 usage() {
     echo "Usage: $0 <commit_type> <commit_message>"
-    echo "Commit types: init, impr, perf, remove, bugfix, hotfix, feat, docs"
+    echo "Commit types: init, impr, perf, remove, bugfix, hotfix, feat, docs, chore, test"
     exit 1
 }
 
