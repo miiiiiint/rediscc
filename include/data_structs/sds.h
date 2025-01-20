@@ -131,20 +131,20 @@ constexpr static inline void sdssetalloc( sds s, size_t new_len ) {
   }
 }
 
-void sdsfree( sds s );
-sds  sdsnew( const char* init );
-sds  sdsnewlen( const void* init, size_t initlen );
-sds  sdstrynewlen( const void* init, size_t initlen );
-sds  sdsempty( void );
-sds  sdsdup( const sds s );
-sds  sdsgrowzero( sds s, size_t len );
-sds  sdscat( sds s, const void* t, size_t len );
-sds  sdscat( sds s, const char* t );
-sds  sdscat( sds s, const sds t );
-sds  sdscat( sds s, char const* fmt, ... );
-sds  sdscpy( sds s, const char* t, size_t len );
-sds  sdscpy( sds s, const char* t );
-sds  sdscatvprintf( sds s, const char* fmt, va_list ap );
+void                 sdsfree( sds s );
+std::optional< sds > sdsnew( const char* init );
+std::optional< sds > sdsnewlen( const void* init, size_t initlen );
+std::optional< sds > sdstrynewlen( const void* init, size_t initlen );
+sds                  sdsempty( void );
+sds                  sdsdup( const sds s );
+sds                  sdsgrowzero( sds s, size_t len );
+sds                  sdscat( sds s, const void* t, size_t len );
+sds                  sdscat( sds s, const char* t );
+sds                  sdscat( sds s, const sds t );
+sds                  sdscat( sds s, char const* fmt, ... );
+sds                  sdscpy( sds s, const char* t, size_t len );
+sds                  sdscpy( sds s, const char* t );
+sds                  sdscatvprintf( sds s, const char* fmt, va_list ap );
 [[gnu::format( printf, 2, 3 )]]
 sds    sdscatprintf( sds s, const char* fmt, ... );
 sds    sdstrim( sds s, const char* cset );
