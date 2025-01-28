@@ -40,6 +40,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/include/allocator
   ${CMAKE_SOURCE_DIR}/include/data_structs
+  ${CMAKE_SOURCE_DIR}/include/util
 )
 
 file(GLOB_RECURSE REDISCC_HEADERS ${CMAKE_SOURCE_DIR}/include/*.h)
@@ -62,6 +63,7 @@ target_link_directories(rediscc PRIVATE
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/include/allocator
   ${CMAKE_SOURCE_DIR}/include/data_structs
+  ${CMAKE_SOURCE_DIR}/include/util
 )
 
 if(ENABLE_TESTING_BUILD)

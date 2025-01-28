@@ -2,6 +2,8 @@
 #define REDISCC_ALLOCATOR_XMALLOC_H
 
 #include <cstddef>
+#include <cstdint>
+#include <functional>
 
 #ifdef USE_JEMALLOC
 #  ifdef __has_include
@@ -31,7 +33,13 @@
  * @param [in] size
  * @return void*
  */
-XMALLOC_HELPER_1 XMALLOC_EXTERN void* xmalloc( size_t size );
+XMALLOC_HELPER_1 XMALLOC_EXTERN void*     xmalloc( size_t size );
+XMALLOC_HELPER_1 XMALLOC_EXTERN void*     xcalloc( size_t size );
+XMALLOC_HELPER_1AND2 XMALLOC_EXTERN void* xcalloc_num( size_t num, size_t size );
+XMALLOC_HELPER_2 XMALLOC_EXTERN void*     xrealloc( void* ptr, size_t size );
+XMALLOC_HELPER_1 XMALLOC_EXTERN void*     try_xmalloc( size_t size );
+XMALLOC_HELPER_1 XMALLOC_EXTERN void*     try_xcalloc( size_t size );
+XMALLOC_HELPER_2 XMALLOC_EXTERN void*     try_xrealloc( void* ptr, size_t size );
 
 /**
  * @author chenmiao (chenmiao.ku@gmail.com)
@@ -45,10 +53,30 @@ XMALLOC_HELPER_1 XMALLOC_EXTERN void* xmalloc( size_t size );
 XMALLOC_HELPER_2 XMALLOC_EXTERN void* xrealloc( void* ptr, size_t size );
 
 XMALLOC_EXTERN void  xfree( void* ptr );
+XMALLOC_EXTERN void  xfree_usable( void* ptr );
 XMALLOC_EXTERN void* xmalloc_usable( size_t size, size_t* usable );
+XMALLOC_EXTERN void* xcalloc_usable( size_t size, size_t* usable );
 XMALLOC_EXTERN void* xrealloc_usable( void* ptr, size_t size, size_t* usable );
 XMALLOC_EXTERN void* try_xmalloc_usable( size_t size, size_t* usable );
+XMALLOC_EXTERN void* try_xcalloc_usable( size_t size, size_t* usable );
 XMALLOC_EXTERN void* try_xrealloc_usable( void* ptr, size_t size, size_t* usable );
+
+XMALLOC_EXTERN size_t  xmalloc_used_memory( void );
+XMALLOC_EXTERN void    xmalloc_set_oom_handler( std::function< void( size_t ) > );
+XMALLOC_EXTERN size_t  xmalloc_get_rss( void );
+XMALLOC_EXTERN int32_t xmalloc_get_allocator_info( int32_t refresh_stats,
+                                                   size_t* allocated,
+                                                   size_t* active,
+                                                   size_t* resident,
+                                                   size_t  retained,
+                                                   size_t* muzzy,
+                                                   size_t* frag_smallbins_bytes );
+XMALLOC_EXTERN int32_t xmalloc_get_allocator_info_by_arena( unsigned int arena,
+                                                            int          refresh_stats,
+                                                            size_t*      allocated,
+                                                            size_t*      active,
+                                                            size_t*      resident,
+                                                            size_t*      frag_smallbins_bytes );
 
 XMALLOC_NOT_MALLOC_HELPER_2 XMALLOC_EXTERN void* extend_to_usable( void* ptr, size_t size );
 

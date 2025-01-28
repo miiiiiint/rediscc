@@ -14,7 +14,11 @@ AlignConsecutiveAssignments:
   AcrossComments: true
   AlignCompound: true
   PadOperators: true
-AlignConsecutiveBitFields: true
+AlignConsecutiveBitFields: 
+  Enabled: true
+  AcrossComments: true
+  AlignCompound: true
+  PadOperators: true
 AlignConsecutiveDeclarations:
   Enabled: true
   AcrossComments: true
@@ -46,7 +50,7 @@ AllowShortCompoundRequirementOnASingleLine: true
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: WithoutElse
-AllowShortLambdasOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Inline
 
 BinPackArguments: false
 BinPackParameters: false
