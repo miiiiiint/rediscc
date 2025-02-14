@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest # Ubuntu 
 
     steps:
-      - name: Checkout 代码
+      - name: Checkout
         uses: actions/checkout@v3
 
       - name: install clang-format
@@ -19,8 +19,8 @@ jobs:
       - name: findfiles
         id: find_files
         run: |
-          FILES=$(find . -regex '.*\.\(c\|cc\|cpp\|cxx\|h\|hpp\|hxx\|objc\|objcpp\)$' -print0 | tr '\0' ' ') # 查找常见 C/C++/ObjC 文件
-          echo "::set-output name=files::$FILES" # 将找到的文件列表设置为输出
+          FILES=$(find . -regex '.*\.\(c\|cc\|cpp\|cxx\|h\|hpp\|hxx\|objc\|objcpp\)$' -print0 | tr '\0' ' ')
+          echo "::set-output name=files::$FILES" 
 
       - name: use format
         run: clang-format -i --style=file ${{ steps.find_files.outputs.files }} # use .clang-format 
@@ -28,12 +28,12 @@ jobs:
       - name: check changes of codes
         id: check_format
         run: |
-          git diff --check || echo "::set-output name=has_changes::true" # 检查是否有格式变动，如果有则设置 has_changes 输出为 true
+          git diff --check || echo "::set-output name=has_changes::true" # set has_changes true
 
-      - name: commit
-        if: steps.check_format.outputs.has_changes == 'true'
-        run: |
-          git config --local user.name "GitHub Action" # 配置提交者用户名
-          git config --local user.email "action@github.com" # 配置提交者邮箱
-          git commit -am "Fix: Apply clang-format style" # 提交更改，提交信息可以自定义
-          git push # 推送提交到仓库
+      # - name: commit
+      #   if: steps.check_format.outputs.has_changes == 'true'
+      #   run: |
+      #     git config --local user.name "GitHub Action" # 配置提交者用户名
+      #     git config --local user.email "action@github.com" # 配置提交者邮箱
+      #     git commit -am "Fix: Apply clang-format style" # 提交更改，提交信息可以自定义
+      #     git push # 推送提交到仓库
