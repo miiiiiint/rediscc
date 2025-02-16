@@ -1,51 +1,19 @@
 name: Clang-Format Check
 
-on:
-  push:
-    branches: "*"
-  pull_request:
-    branches: "*"
+on: [push,pull_request]
 
 jobs:
   format-check:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code 
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up clang-format 
+      - name: Set up clang-format
         run: |
-          sudo apt-get update
-          sudo apt-get install clang-format
+          sudo apt update
+          sudo apt install clang-format
 
       - name: Find files and format check 
-        run: |
-          #!/bin/bash
-          echo "Starting clang-format check..."
-
-          FILES=$(find . -type f) 
-
-          HAS_CHANGES=false 
-          ERROR_MESSAGES="" 
-
-          for file in $FILES; do
-            echo "Processing file: $file"
-            clang-format "$file" > "$file.tmp" 
-
-            if ! diff -q "$file" "$file.tmp" > /dev/null; then
-              HAS_CHANGES=true
-              DIFF_OUTPUT=$(diff "$file" "$file.tmp") 
-              ERROR_MESSAGES+="\n--- File: $file ---\n$DIFF_OUTPUT"
-              echo "Formatting issues detected in: $file"
-            fi
-            rm "$file.tmp" 
-          done
-
-          if [[ "$HAS_CHANGES" == "true" ]]; then
-            echo "::error::Formatting issues found! Please check the diff below:"
-            echo "$ERROR_MESSAGES"
-            exit 1 
-          else
-            echo "No formatting issues found!"
-          fi
+        run: ./format_check.sh
