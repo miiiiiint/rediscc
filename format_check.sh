@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Starting clang-format check..."
 
-FILES=$(find . -type f)
+FILES=$(find . -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.hpp" -o -name "*.h" -o -name "*.hxx" -o -name "*.inc" \) )
 
 HAS_CHANGES=false 
 ERROR_MESSAGES="" 
