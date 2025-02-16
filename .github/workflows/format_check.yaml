@@ -16,4 +16,6 @@ jobs:
           sudo apt install clang-format
 
       - name: Find files and format check 
-        run: ./format_check.sh
+        run: |
+          sudo chmod +x format_check.sh
+          ./format_check.sh
