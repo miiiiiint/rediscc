@@ -34,4 +34,5 @@ fi
 emoji_code=$(get_emoji_code $1)
 
 # Commit with the emoji code and message
+git add .
 git commit -m "[$1 $emoji_code]: $2"
