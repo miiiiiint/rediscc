@@ -34,8 +34,8 @@ AlignConsecutiveShortCaseStatements:
   AcrossComments: true
   AcrossEmptyLines: true
   AlignCaseColons: true
-AlignConsecutiveTableGenDefinitionColons: true
-AlignEscapedNewlines: LeftWithLastLine
+# AlignConsecutiveTableGenDefinitionColons: true
+# AlignEscapedNewlines: LeftWithLastLine
 AlignOperands: Align
 AlignTrailingComments:
   Kind: Always
@@ -44,7 +44,7 @@ AlignTrailingComments:
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
-AllowShortCaseExpressionOnASingleLine: true
+# AllowShortCaseExpressionOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortCompoundRequirementOnASingleLine: true
 AllowShortEnumsOnASingleLine: false
@@ -72,14 +72,14 @@ BraceWrapping:
 
 BreakAdjacentStringLiterals: true
 BreakAfterAttributes: Always
-BreakAfterReturnType: Automatic
+# BreakAfterReturnType: Automatic
 BreakBeforeBinaryOperators: All
 BreakBeforeConceptDeclarations: Always
 BreakBeforeInlineASMColon: Always
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeComma
 BreakStringLiterals: true
-BreakTemplateDeclarations: Yes
+# BreakTemplateDeclarations: Yes
 
 Cpp11BracedListStyle: false
 FixNamespaceComments: true
@@ -107,7 +107,7 @@ SpacesInAngles: Always
 SpacesInContainerLiterals: true
 SpacesInParens: Custom
 SpacesInParensOptions:
-  ExceptDoubleParentheses: true
+  # ExceptDoubleParentheses: true
   InConditionalStatements: true
   InEmptyParentheses: false
   InCStyleCasts: false
