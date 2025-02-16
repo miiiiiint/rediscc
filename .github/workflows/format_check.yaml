@@ -13,7 +13,7 @@ jobs:
       - name: Set up clang-format
         run: |
           sudo apt update
-          sudo apt install clang-format
+          sudo apt install clang-format-18
 
       - name: Find files and format check 
         run: |
