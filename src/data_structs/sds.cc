@@ -273,3 +273,38 @@ sds sdscpy( sds s, const sds t ) {
   if ( t == nullptr ) return sdscpy( s, "", 0 );
   return sdscpy( s, t, sdslen( t ) );
 }
+
+/**
+ * @brief Duplicate an SDS string
+ * @param s SDS string to duplicate
+ * @return New SDS string copy, or nullptr on failure
+ */
+sds sdsdup( const sds s ) {
+  if ( s == nullptr ) return nullptr;
+  auto result = sdsnewlen( s, sdslen( s ) );
+  return result ? *result : nullptr;
+}
+
+/**
+ * @brief Compare two SDS strings
+ * @param s1 First SDS string
+ * @param s2 Second SDS string
+ * @return < 0 if s1 < s2, 0 if s1 == s2, > 0 if s1 > s2
+ */
+int8_t sdscmp( const sds s1, const sds s2 ) {
+  if ( s1 == s2 ) return 0;
+  if ( s1 == nullptr ) return -1;
+  if ( s2 == nullptr ) return 1;
+
+  size_t l1     = sdslen( s1 );
+  size_t l2     = sdslen( s2 );
+  size_t minlen = ( l1 < l2 ) ? l1 : l2;
+
+  int cmp = memcmp( s1, s2, minlen );
+  if ( cmp == 0 ) {
+    if ( l1 < l2 ) return -1;
+    if ( l1 > l2 ) return 1;
+    return 0;
+  }
+  return cmp;
+}
