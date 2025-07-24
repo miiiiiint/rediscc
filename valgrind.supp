@@ -1,0 +1,211 @@
+# Valgrind suppression file for RedisCC
+# This file contains suppressions for known false positives and third-party library issues
+
+# Standard library suppressions
+{
+   std_string_false_positive
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   obj:*/libstdc++.so.*
+   fun:call_init.part.0
+   fun:call_init
+   fun:_dl_init
+}
+
+{
+   std_locale_false_positive
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   fun:_ZNSt6locale5_ImplC1Em
+   fun:_ZNSt6locale5_ImplC1ERKS0_m
+}
+
+{
+   std_ios_base_false_positive
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   fun:_ZNSt8ios_base4InitC1Ev
+}
+
+# Google Test suppressions
+{
+   gtest_leak_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   obj:*/libgtest*.so*
+}
+
+{
+   gtest_death_test_suppression
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   fun:malloc
+   ...
+   fun:*DeathTest*
+}
+
+# spdlog suppressions
+{
+   spdlog_thread_pool_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   fun:_ZN6spdlog7details11thread_pool*
+}
+
+{
+   spdlog_registry_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   fun:_ZN6spdlog7details8registry*
+}
+
+# jemalloc suppressions (if using jemalloc)
+{
+   jemalloc_init_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:je_malloc
+   fun:*jemalloc*
+}
+
+{
+   jemalloc_arena_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*
+   fun:je_*
+   fun:*arena*
+}
+
+# Thread-related suppressions
+{
+   pthread_create_suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_*
+}
+
+{
+   thread_local_storage_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_*
+}
+
+# Dynamic loader suppressions
+{
+   dl_init_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:dl_open_worker
+}
+
+{
+   dl_close_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib*/ld-*.so
+   fun:_dl_close_worker
+   fun:_dl_close
+   fun:_dl_catch_exception
+}
+
+# Compiler-generated code suppressions
+{
+   cxa_atexit_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__cxa_atexit
+}
+
+{
+   global_constructor_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   fun:__static_initialization_and_destruction_*
+}
+
+# System library suppressions
+{
+   libc_dl_lookup_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_lookup_symbol_x
+   fun:_dl_fixup
+   fun:_dl_runtime_resolve_xsavec
+}
+
+{
+   timezone_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:tzset_internal
+   fun:__tz_convert
+}
+
+# Conditional suppressions for specific platforms
+{
+   ubuntu_libc_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib/x86_64-linux-gnu/libc-*.so
+}
+
+{
+   fedora_libc_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib64/libc-*.so
+}
+
+# Custom project suppressions (add project-specific suppressions here)
+{
+   rediscc_logger_init_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   fun:*rediscc*logger*Init*
+}
+
+# Suppress one-time allocations that are intentionally not freed
+{
+   singleton_pattern_suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Znwm
+   fun:*Instance*
+   fun:*Singleton*
+}

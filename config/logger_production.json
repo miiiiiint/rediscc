@@ -1,0 +1,57 @@
+{
+  "logger_name": "REDISCC",
+  "level": "warn",
+  "format": "json",
+  "auto_flush": true,
+  "flush_interval_ms": 5000,
+  
+  "async": {
+    "enabled": true,
+    "queue_size": 16384,
+    "thread_count": 2,
+    "overflow_policy_block": false
+  },
+  
+  "context": {
+    "include_thread_id": true,
+    "include_process_id": true,
+    "include_function_name": false,
+    "include_file_line": false,
+    "include_timestamp": true
+  },
+  
+  "filter": {
+    "enabled": true,
+    "sensitive_keys": [
+      "password", "passwd", "pwd", "secret", "key", "token", "auth",
+      "authorization", "credential", "private_key", "access_token",
+      "session_id", "cookie", "jwt", "api_key", "client_secret"
+    ],
+    "sensitive_patterns": [
+      "\\b\\d{11}\\b",
+      "\\b[\\w\\.-]+@[\\w\\.-]+\\.\\w+\\b",
+      "\\b\\d{15,19}\\b",
+      "\\b[A-Za-z0-9+/]{40,}={0,2}\\b"
+    ],
+    "mask_string": "***MASKED***"
+  },
+  
+  "sinks": [
+    {
+      "type": "daily_file",
+      "pattern": "",
+      "level": "warn",
+      "filename": "logs/rediscc_%Y%m%d.log",
+      "rotation_hour": 0,
+      "rotation_minute": 0
+    },
+    {
+      "type": "rotating_file",
+      "pattern": "",
+      "level": "error",
+      "filename": "logs/rediscc_error.log",
+      "max_size": 10485760,
+      "max_files": 10
+    }
+  ]
+}

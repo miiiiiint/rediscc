@@ -1,0 +1,61 @@
+{
+  "logger_name": "REDISCC",
+  "level": "info",
+  "format": "text",
+  "auto_flush": true,
+  "flush_interval_ms": 1000,
+  
+  "async": {
+    "enabled": true,
+    "queue_size": 8192,
+    "thread_count": 1,
+    "overflow_policy_block": false
+  },
+  
+  "context": {
+    "include_thread_id": true,
+    "include_process_id": false,
+    "include_function_name": false,
+    "include_file_line": false,
+    "include_timestamp": true
+  },
+  
+  "filter": {
+    "enabled": true,
+    "sensitive_keys": [
+      "password", "passwd", "pwd", "secret", "key", "token", "auth",
+      "authorization", "credential", "private_key", "access_token"
+    ],
+    "sensitive_patterns": [
+      "\\b\\d{11}\\b",
+      "\\b[\\w\\.-]+@[\\w\\.-]+\\.\\w+\\b",
+      "\\b\\d{15,19}\\b"
+    ],
+    "mask_string": "***"
+  },
+  
+  "sinks": [
+    {
+      "type": "console",
+      "pattern": "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%t] %v",
+      "level": "info",
+      "colored": true
+    },
+    {
+      "type": "rotating_file",
+      "pattern": "[%Y-%m-%d %H:%M:%S.%e] [%l] [%t] %v",
+      "level": "debug",
+      "filename": "logs/rediscc.log",
+      "max_size": 10485760,
+      "max_files": 5
+    },
+    {
+      "type": "rotating_file",
+      "pattern": "[%Y-%m-%d %H:%M:%S.%e] [%l] [%t] %v",
+      "level": "error",
+      "filename": "logs/rediscc_error.log",
+      "max_size": 5242880,
+      "max_files": 3
+    }
+  ]
+}

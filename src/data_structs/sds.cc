@@ -61,10 +61,14 @@ std::optional< sds > _sdsnewlen( const void* init, size_t initlen, bool try_mall
   }
 
   sds buf = static_cast< char* >( new_sds ) + hdr_len;
-  sdssetlen( buf, initlen );
-  sdssetalloc( buf, usable );
+
+  // Set the type flag in the byte before the buffer
   uint8_t* flag = ( (uint8_t*)buf ) - 1;
   *flag         = static_cast< uint8_t >( hdr_type );
+
+  // Set length and allocation size
+  sdssetlen( buf, initlen );
+  sdssetalloc( buf, usable );
 
   if ( initlen && init ) {
     memcpy( buf, init, initlen );
@@ -85,4 +89,187 @@ std::optional< sds > sdsnewlen( const void* init, size_t initlen ) {
 
 std::optional< sds > sdstrynewlen( const void* init, size_t initlen ) {
   return _sdsnewlen( init, initlen, true );
+}
+
+/**
+ * @brief Create an empty SDS string
+ * @return Empty SDS string, or nullptr on failure
+ */
+sds sdsempty( void ) {
+  auto result = sdsnewlen( "", 0 );
+  return result ? *result : nullptr;
+}
+
+/**
+ * @brief Free an SDS string
+ * @param s SDS string to free
+ */
+void sdsfree( sds s ) {
+  if ( s == nullptr ) return;
+
+  sds_type type = get_sds_type( s );
+  size_t   hdr_len;
+
+  switch ( type ) {
+  case sds_type::TYPE_5 : hdr_len = sizeof( sdshdr5 ); break;
+  case sds_type::TYPE_8 : hdr_len = sizeof( sdshdr8 ); break;
+  case sds_type::TYPE_16: hdr_len = sizeof( sdshdr16 ); break;
+  case sds_type::TYPE_32: hdr_len = sizeof( sdshdr32 ); break;
+  case sds_type::TYPE_64: hdr_len = sizeof( sdshdr64 ); break;
+  default               : return;  // Invalid type
+  }
+
+  void* ptr = s - hdr_len;
+  xfree( ptr );
+}
+
+/**
+ * @brief Make room for additional data in SDS string
+ * @param s SDS string
+ * @param addlen Additional length needed
+ * @return Reallocated SDS string, or nullptr on failure
+ */
+sds sdsMakeRoomFor( sds s, size_t addlen ) {
+  if ( s == nullptr ) return nullptr;
+
+  size_t avail = sdsavail( s );
+  if ( avail >= addlen ) return s;  // Already have enough space
+
+  size_t len    = sdslen( s );
+  size_t newlen = len + addlen;
+
+  // Growth strategy: double the size if less than 1MB, otherwise add 1MB
+  if ( newlen < 1024 * 1024 ) {
+    newlen *= 2;
+  } else {
+    newlen += 1024 * 1024;
+  }
+
+  auto [ new_type, new_hdr_len ] = get_hdr_attr( newlen );
+  sds_type old_type              = get_sds_type( s );
+  size_t   old_hdr_len;
+
+  switch ( old_type ) {
+  case sds_type::TYPE_5 : old_hdr_len = sizeof( sdshdr5 ); break;
+  case sds_type::TYPE_8 : old_hdr_len = sizeof( sdshdr8 ); break;
+  case sds_type::TYPE_16: old_hdr_len = sizeof( sdshdr16 ); break;
+  case sds_type::TYPE_32: old_hdr_len = sizeof( sdshdr32 ); break;
+  case sds_type::TYPE_64: old_hdr_len = sizeof( sdshdr64 ); break;
+  default               : return nullptr;
+  }
+
+  void*  old_ptr = s - old_hdr_len;
+  size_t usable  = 0;
+  void*  new_ptr = xrealloc_usable( old_ptr, new_hdr_len + newlen + 1, &usable );
+
+  if ( new_ptr == nullptr ) return nullptr;
+
+  usable = usable - new_hdr_len - 1;
+  if ( usable > get_type_max( new_type ) ) {
+    usable = get_type_max( new_type );
+  }
+
+  sds new_s = static_cast< char* >( new_ptr ) + new_hdr_len;
+
+  // If header type changed, we need to move data and update header
+  if ( new_type != old_type ) {
+    memmove( new_s, static_cast< char* >( new_ptr ) + old_hdr_len, len + 1 );
+  }
+
+  sdssetlen( new_s, len );
+  sdssetalloc( new_s, usable );
+  uint8_t* flag = ( (uint8_t*)new_s ) - 1;
+  *flag         = static_cast< uint8_t >( new_type );
+
+  return new_s;
+}
+
+/**
+ * @brief Concatenate binary data to SDS string
+ * @param s SDS string
+ * @param t Data to append
+ * @param len Length of data to append
+ * @return Reallocated SDS string, or nullptr on failure
+ */
+sds sdscat( sds s, const void* t, size_t len ) {
+  if ( s == nullptr || t == nullptr ) return s;
+
+  s = sdsMakeRoomFor( s, len );
+  if ( s == nullptr ) return nullptr;
+
+  size_t curlen = sdslen( s );
+  memcpy( s + curlen, t, len );
+  sdssetlen( s, curlen + len );
+  s[ curlen + len ] = '\0';
+
+  return s;
+}
+
+/**
+ * @brief Concatenate C string to SDS string
+ * @param s SDS string
+ * @param t C string to append
+ * @return Reallocated SDS string, or nullptr on failure
+ */
+sds sdscat( sds s, const char* t ) {
+  if ( t == nullptr ) return s;
+  return sdscat( s, t, strlen( t ) );
+}
+
+/**
+ * @brief Concatenate another SDS string to SDS string
+ * @param s SDS string
+ * @param t SDS string to append
+ * @return Reallocated SDS string, or nullptr on failure
+ */
+sds sdscat( sds s, const sds t ) {
+  if ( t == nullptr ) return s;
+  return sdscat( s, static_cast< const void* >( t ), sdslen( t ) );
+}
+
+/**
+ * @brief Copy binary data to SDS string
+ * @param s SDS string
+ * @param t Data to copy
+ * @param len Length of data to copy
+ * @return Reallocated SDS string, or nullptr on failure
+ */
+sds sdscpy( sds s, const void* t, size_t len ) {
+  if ( s == nullptr ) return nullptr;
+  if ( t == nullptr ) len = 0;
+
+  if ( sdsalloc( s ) < len ) {
+    s = sdsMakeRoomFor( s, len - sdslen( s ) );
+    if ( s == nullptr ) return nullptr;
+  }
+
+  if ( len > 0 && t != nullptr ) {
+    memcpy( s, t, len );
+  }
+  s[ len ] = '\0';
+  sdssetlen( s, len );
+
+  return s;
+}
+
+/**
+ * @brief Copy C string to SDS string
+ * @param s SDS string
+ * @param t C string to copy
+ * @return Reallocated SDS string, or nullptr on failure
+ */
+sds sdscpy( sds s, const char* t ) {
+  if ( t == nullptr ) return sdscpy( s, "", 0 );
+  return sdscpy( s, t, strlen( t ) );
+}
+
+/**
+ * @brief Copy another SDS string to SDS string
+ * @param s SDS string
+ * @param t SDS string to copy
+ * @return Reallocated SDS string, or nullptr on failure
+ */
+sds sdscpy( sds s, const sds t ) {
+  if ( t == nullptr ) return sdscpy( s, "", 0 );
+  return sdscpy( s, t, sdslen( t ) );
 }

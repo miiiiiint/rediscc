@@ -33,8 +33,7 @@ struct [[gnu::packed]] sdshdr5 {
   char          buf[];
 };
 
-template < typename SDS_TYPE >
-struct [[gnu::packed]] sdshdr {
+template < typename SDS_TYPE > struct [[gnu::packed]] sdshdr {
   SDS_TYPE len;
   SDS_TYPE alloc;
   uint8_t  flags;
@@ -50,18 +49,15 @@ constexpr sds_type get_sds_type( const sds s ) {
   return static_cast< sds_type >( s[ -1 ] & (int)sds_type::TYPE_MASK );
 }
 
-template < typename SDS_TYPE >
-SDS_TYPE* get_hdr_ptr( const sds s ) {
+template < typename SDS_TYPE > SDS_TYPE* get_hdr_ptr( const sds s ) {
   return reinterpret_cast< SDS_TYPE* >( s - offsetof( SDS_TYPE, buf ) );
 }
 
-template < typename SDS_TYPE >
-constexpr size_t __sdslen( const sds s ) {
+template < typename SDS_TYPE > constexpr size_t __sdslen( const sds s ) {
   return get_hdr_ptr< SDS_TYPE >( s )->len;
 }
 
-template < typename SDS_TYPE >
-constexpr size_t __sdsalloc( const sds s ) {
+template < typename SDS_TYPE > constexpr size_t __sdsalloc( const sds s ) {
   return get_hdr_ptr< SDS_TYPE >( s )->alloc;
 }
 
@@ -141,9 +137,9 @@ sds                  sdsgrowzero( sds s, size_t len );
 sds                  sdscat( sds s, const void* t, size_t len );
 sds                  sdscat( sds s, const char* t );
 sds                  sdscat( sds s, const sds t );
-sds                  sdscat( sds s, char const* fmt, ... );
-sds                  sdscpy( sds s, const char* t, size_t len );
+sds                  sdscpy( sds s, const void* t, size_t len );
 sds                  sdscpy( sds s, const char* t );
+sds                  sdscpy( sds s, const sds t );
 sds                  sdscatvprintf( sds s, const char* fmt, va_list ap );
 [[gnu::format( printf, 2, 3 )]]
 sds    sdscatprintf( sds s, const char* fmt, ... );

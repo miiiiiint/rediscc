@@ -1,0 +1,74 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C++ source files
+[*.{cpp,cc,cxx,hpp,h,hxx,inc}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# CMake files
+[{CMakeLists.txt,*.cmake}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# Shell scripts
+[*.sh]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# JSON files
+[*.json]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# Markdown files
+[*.md]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+trim_trailing_whitespace = false
+
+# Makefiles
+[{Makefile,*.mk}]
+indent_style = tab
+indent_size = 4
+
+# Python files (if any)
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+# Configuration files
+[*.{ini,cfg,conf}]
+indent_style = space
+indent_size = 2
+
+# Git files
+[.gitignore]
+indent_style = space
+indent_size = 2
+
+# Docker files
+[{Dockerfile,*.dockerfile}]
+indent_style = space
+indent_size = 2
