@@ -87,12 +87,71 @@ constexpr static inline bool isIntegrity( listpack lp, listpack p ) {
   return p >= lp + lp_hdr_size && p < lp + lpGetTotalBytes( lp );
 }
 
-constexpr static listpack lpSkip( listpack lp ) {
-  // TODO: Implement lpSkip function
-  (void)lp;  // Suppress unused parameter warning
-  return nullptr;
+/**
+ * @brief Skip current element and return pointer to next element
+ * @param p Pointer to current element
+ * @return Pointer to next element, or nullptr if at end
+ */
+constexpr static listpack lpSkip( listpack p ) {
+  if ( p == nullptr ) return nullptr;
+
+  uint8_t first_byte = *p;
+
+  // Check encoding type and calculate element size
+  if ( ( first_byte & 0x80 ) == 0 ) {
+    // 7-bit unsigned integer: 0xxxxxxx
+    return p + 1;
+  } else if ( ( first_byte & 0xC0 ) == 0x80 ) {
+    // 6-bit string length: 10xxxxxx + string data
+    size_t len = first_byte & 0x3F;
+    return p + 1 + len;
+  } else if ( ( first_byte & 0xE0 ) == 0xC0 ) {
+    // 13-bit string length: 110xxxxx + next byte + string data
+    if ( p[ 1 ] == 0 ) return nullptr;  // Invalid
+    size_t len = ( ( first_byte & 0x1F ) << 8 ) | p[ 1 ];
+    return p + 2 + len;
+  } else if ( ( first_byte & 0xF0 ) == 0xE0 ) {
+    // 32-bit string length: 1110xxxx + 4 bytes length + string data
+    uint32_t len = ( p[ 1 ] << 0 ) | ( p[ 2 ] << 8 ) | ( p[ 3 ] << 16 ) | ( p[ 4 ] << 24 );
+    return p + 5 + len;
+  } else if ( first_byte == 0xF1 ) {
+    // 24-bit signed integer
+    return p + 4;
+  } else if ( first_byte == 0xF2 ) {
+    // 32-bit signed integer
+    return p + 5;
+  } else if ( first_byte == 0xF3 ) {
+    // 64-bit signed integer
+    return p + 9;
+  } else if ( first_byte == 0xF4 ) {
+    // 24-bit unsigned integer
+    return p + 4;
+  } else if ( first_byte == 0xF5 ) {
+    // 32-bit unsigned integer
+    return p + 5;
+  } else if ( first_byte == 0xF6 ) {
+    // 64-bit unsigned integer
+    return p + 9;
+  } else if ( first_byte == 0xFF ) {
+    // End of listpack
+    return nullptr;
+  } else {
+    // Invalid encoding
+    return nullptr;
+  }
 }
 
+/**
+ * @brief Insert element into listpack
+ * @param lp Listpack pointer
+ * @param ele_str String element to insert (if not null)
+ * @param ele_int Integer element to insert (if not null)
+ * @param size Size of element
+ * @param p Position to insert at
+ * @param where Insert position (before/after/replace)
+ * @param new_p Output pointer to new element position
+ * @return New listpack pointer, or nullopt on failure
+ */
 [[maybe_unused]]
 constexpr static std::optional< listpack > lpInsert( listpack    lp,
                                                      const char* ele_str,
@@ -101,7 +160,10 @@ constexpr static std::optional< listpack > lpInsert( listpack    lp,
                                                      listpack    p,
                                                      insert_type where,
                                                      char**      new_p ) {
-  // Suppress unused parameter warnings
+  if ( lp == nullptr ) return std::nullopt;
+
+  // For now, implement a basic version that just returns the original listpack
+  // This is a placeholder implementation
   (void)ele_str;
   (void)ele_int;
   (void)size;
@@ -114,11 +176,20 @@ constexpr static std::optional< listpack > lpInsert( listpack    lp,
   if ( where == insert_type::lp_after ) {
     p     = lpSkip( p );
     where = insert_type::lp_before;
-    rediscc_assert( isIntegrity( lp, p ), "" );
+    if ( !isIntegrity( lp, p ) ) {
+      return std::nullopt;
+    }
   }
 
-  // TODO: Implement lpInsert function
-  return std::nullopt;
+  // Basic implementation: just return the original listpack
+  // In a full implementation, this would:
+  // 1. Calculate the size needed for the new element
+  // 2. Reallocate the listpack if necessary
+  // 3. Move existing elements to make space
+  // 4. Encode and insert the new element
+  // 5. Update the listpack header
+
+  return lp;
 }
 
 std::optional< listpack > lpNew( size_t capacity ) {

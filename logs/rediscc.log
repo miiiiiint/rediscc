@@ -114,3 +114,90 @@
 [2025-07-24 14:48:26.488] [info] [19290] Test message {} [4 ]
 [2025-07-24 14:48:26.488] [warning] [19290] Warning message
 [2025-07-24 14:48:26.488] [error] [19290] Error message
+[2025-07-24 19:15:42.246] [info] [26317] This is an info message
+[2025-07-24 19:15:42.246] [warning] [26317] This is a warning message
+[2025-07-24 19:15:42.246] [error] [26317] This is an error message
+[2025-07-24 19:15:42.247] [critical] [26317] This is a critical message
+[2025-07-24 19:15:42.247] [info] [26317] Formatted message: {} {} [42 test ]
+[2025-07-24 19:15:42.247] [info] [26317] Multiple params: {}, {}, {} [1 2.5 string ]
+[2025-07-24 19:15:42.258] [info] [26317] Context test message
+[2025-07-24 19:15:42.258] [info] [26317] Message with scoped context
+[2025-07-24 19:15:42.258] [info] [26317] AUDIT: user={} operation={} message={} [test-user test_operation Audit test message ]
+[2025-07-24 19:15:42.275] [info] [26317] PERF_END: {} took {:.3f} ms [test_operation 10.089 ]
+[2025-07-24 19:15:42.281] [info] [26317] PERF_END: {} took {:.3f} ms [manual_test 5.124 ]
+[2025-07-24 19:15:42.292] [info] [26317] REQUEST_START: {} [test-req-789 ]
+[2025-07-24 19:15:42.292] [info] [26317] REQUEST_MILESTONE: {} - {} at +{}ms [test-req-789 milestone_1 0 ]
+[2025-07-24 19:15:42.298] [info] [26317] REQUEST_MILESTONE: {} - {} at +{}ms [test-req-789 milestone_2 5 ]
+[2025-07-24 19:15:42.298] [info] [26317] REQUEST_END: {} completed in {} ms [test-req-789 5 ]
+[2025-07-24 19:15:42.307] [info] [26317] This should be logged
+[2025-07-24 19:15:42.318] [error] [26317] ERROR_CODE: {} - {} [404 Resource not found: /test/resource ]
+[2025-07-24 19:15:42.318] [error] [26317] ERROR_CODE: {} - {} [500 Internal server error ]
+[2025-07-24 19:15:42.334] [info] [26317] Batch message 1
+[2025-07-24 19:15:42.334] [info] [26317] Batch message 2
+[2025-07-24 19:15:42.334] [info] [26317] Batch message 3
+[2025-07-24 19:15:42.334] [info] [26317] Batch message 4
+[2025-07-24 19:15:42.341] [info] [26317] Test message {} [0 ]
+[2025-07-24 19:15:42.341] [info] [26317] Test message {} [1 ]
+[2025-07-24 19:15:42.341] [info] [26317] Test message {} [2 ]
+[2025-07-24 19:15:42.341] [info] [26317] Test message {} [3 ]
+[2025-07-24 19:15:42.341] [info] [26317] Test message {} [4 ]
+[2025-07-24 19:15:42.341] [warning] [26317] Warning message
+[2025-07-24 19:15:42.341] [error] [26317] Error message
+[2025-07-24 19:15:50.419] [info] [26456] This is an info message
+[2025-07-24 19:15:50.420] [warning] [26456] This is a warning message
+[2025-07-24 19:15:50.420] [error] [26456] This is an error message
+[2025-07-24 19:15:50.420] [critical] [26456] This is a critical message
+[2025-07-24 19:15:50.420] [info] [26456] Formatted message: {} {} [42 test ]
+[2025-07-24 19:15:50.420] [info] [26456] Multiple params: {}, {}, {} [1 2.5 string ]
+[2025-07-24 19:15:50.427] [info] [26456] Context test message
+[2025-07-24 19:15:50.427] [info] [26456] Message with scoped context
+[2025-07-24 19:15:50.428] [info] [26456] AUDIT: user={} operation={} message={} [test-user test_operation Audit test message ]
+[2025-07-24 19:15:50.444] [info] [26456] PERF_END: {} took {:.3f} ms [test_operation 10.099 ]
+[2025-07-24 19:15:50.450] [info] [26456] PERF_END: {} took {:.3f} ms [manual_test 5.147 ]
+[2025-07-24 19:15:50.456] [info] [26456] REQUEST_START: {} [test-req-789 ]
+[2025-07-24 19:15:50.457] [info] [26456] REQUEST_MILESTONE: {} - {} at +{}ms [test-req-789 milestone_1 0 ]
+[2025-07-24 19:15:50.462] [info] [26456] REQUEST_MILESTONE: {} - {} at +{}ms [test-req-789 milestone_2 5 ]
+[2025-07-24 19:15:50.462] [info] [26456] REQUEST_END: {} completed in {} ms [test-req-789 5 ]
+[2025-07-24 19:15:50.471] [info] [26456] This should be logged
+[2025-07-24 19:15:50.479] [error] [26456] ERROR_CODE: {} - {} [404 Resource not found: /test/resource ]
+[2025-07-24 19:15:50.479] [error] [26456] ERROR_CODE: {} - {} [500 Internal server error ]
+[2025-07-24 19:15:50.495] [info] [26456] Batch message 1
+[2025-07-24 19:15:50.495] [info] [26456] Batch message 2
+[2025-07-24 19:15:50.495] [info] [26456] Batch message 3
+[2025-07-24 19:15:50.495] [info] [26456] Batch message 4
+[2025-07-24 19:15:50.503] [info] [26456] Test message {} [0 ]
+[2025-07-24 19:15:50.504] [info] [26456] Test message {} [1 ]
+[2025-07-24 19:15:50.504] [info] [26456] Test message {} [2 ]
+[2025-07-24 19:15:50.504] [info] [26456] Test message {} [3 ]
+[2025-07-24 19:15:50.504] [info] [26456] Test message {} [4 ]
+[2025-07-24 19:15:50.504] [warning] [26456] Warning message
+[2025-07-24 19:15:50.504] [error] [26456] Error message
+[2025-07-24 19:18:08.371] [info] [26937] This is an info message
+[2025-07-24 19:18:08.371] [warning] [26937] This is a warning message
+[2025-07-24 19:18:08.371] [error] [26937] This is an error message
+[2025-07-24 19:18:08.371] [critical] [26937] This is a critical message
+[2025-07-24 19:18:08.371] [info] [26937] Formatted message: {} {} [42 test ]
+[2025-07-24 19:18:08.371] [info] [26937] Multiple params: {}, {}, {} [1 2.5 string ]
+[2025-07-24 19:18:08.378] [info] [26937] Context test message
+[2025-07-24 19:18:08.378] [info] [26937] Message with scoped context
+[2025-07-24 19:18:08.378] [info] [26937] AUDIT: user={} operation={} message={} [test-user test_operation Audit test message ]
+[2025-07-24 19:18:08.397] [info] [26937] PERF_END: {} took {:.3f} ms [test_operation 10.106 ]
+[2025-07-24 19:18:08.402] [info] [26937] PERF_END: {} took {:.3f} ms [manual_test 5.158 ]
+[2025-07-24 19:18:08.409] [info] [26937] REQUEST_START: {} [test-req-789 ]
+[2025-07-24 19:18:08.409] [info] [26937] REQUEST_MILESTONE: {} - {} at +{}ms [test-req-789 milestone_1 0 ]
+[2025-07-24 19:18:08.414] [info] [26937] REQUEST_MILESTONE: {} - {} at +{}ms [test-req-789 milestone_2 5 ]
+[2025-07-24 19:18:08.415] [info] [26937] REQUEST_END: {} completed in {} ms [test-req-789 5 ]
+[2025-07-24 19:18:08.421] [info] [26937] This should be logged
+[2025-07-24 19:18:08.428] [error] [26937] ERROR_CODE: {} - {} [404 Resource not found: /test/resource ]
+[2025-07-24 19:18:08.428] [error] [26937] ERROR_CODE: {} - {} [500 Internal server error ]
+[2025-07-24 19:18:08.441] [info] [26937] Batch message 1
+[2025-07-24 19:18:08.441] [info] [26937] Batch message 2
+[2025-07-24 19:18:08.441] [info] [26937] Batch message 3
+[2025-07-24 19:18:08.441] [info] [26937] Batch message 4
+[2025-07-24 19:18:08.447] [info] [26937] Test message {} [0 ]
+[2025-07-24 19:18:08.447] [info] [26937] Test message {} [1 ]
+[2025-07-24 19:18:08.447] [info] [26937] Test message {} [2 ]
+[2025-07-24 19:18:08.447] [info] [26937] Test message {} [3 ]
+[2025-07-24 19:18:08.447] [info] [26937] Test message {} [4 ]
+[2025-07-24 19:18:08.447] [warning] [26937] Warning message
+[2025-07-24 19:18:08.447] [error] [26937] Error message

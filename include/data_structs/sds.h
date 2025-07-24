@@ -137,7 +137,6 @@ sds                  sdsgrowzero( sds s, size_t len );
 sds                  sdscat( sds s, const void* t, size_t len );
 sds                  sdscat( sds s, const char* t );
 sds                  sdscat( sds s, const sds t );
-sds                  sdscat( sds s, char const* fmt, ... );
 sds                  sdscpy( sds s, const void* t, size_t len );
 sds                  sdscpy( sds s, const char* t );
 sds                  sdscpy( sds s, const sds t );

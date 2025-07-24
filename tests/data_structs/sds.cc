@@ -110,3 +110,95 @@ TEST_F( SDSTest, Copy ) {
   sdsfree( s );
   sdsfree( s2 );
 }
+
+/**
+ * Test memory management and growth
+ */
+TEST_F( SDSTest, MemoryManagement ) {
+  auto s_opt = sdsnew( "test" );
+  ASSERT_TRUE( s_opt.has_value() );
+  sds s = *s_opt;
+
+  size_t initial_alloc = sdsalloc( s );
+  EXPECT_GE( initial_alloc, 4 );  // Should have at least the string length
+
+  // Test growth by concatenating
+  for ( int i = 0; i < 100; i++ ) {
+    s = sdscat( s, "x" );
+    ASSERT_NE( s, nullptr );
+  }
+
+  EXPECT_EQ( sdslen( s ), 104 );    // 4 + 100
+  EXPECT_GT( sdsalloc( s ), 104 );  // Should have allocated more than needed
+
+  sdsfree( s );
+}
+
+/**
+ * Test edge cases and error conditions
+ */
+TEST_F( SDSTest, EdgeCases ) {
+  // Test with null pointers
+  sdsfree( nullptr );  // Should not crash
+
+  auto s_opt = sdsnew( "test" );
+  ASSERT_TRUE( s_opt.has_value() );
+  sds s = *s_opt;
+
+  // Test concatenating null
+  s = sdscat( s, static_cast< const char* >( nullptr ) );
+  EXPECT_EQ( sdslen( s ), 4 );
+  EXPECT_STREQ( s, "test" );
+
+  // Test copying null
+  s = sdscpy( s, static_cast< const char* >( nullptr ) );
+  EXPECT_EQ( sdslen( s ), 0 );
+  EXPECT_STREQ( s, "" );
+
+  sdsfree( s );
+}
+
+/**
+ * Test binary data handling
+ */
+TEST_F( SDSTest, BinaryData ) {
+  const char binary_data[] = { 'a', '\0', 'b', '\0', 'c' };
+
+  auto s_opt = sdsnewlen( binary_data, sizeof( binary_data ) );
+  ASSERT_TRUE( s_opt.has_value() );
+  sds s = *s_opt;
+
+  EXPECT_EQ( sdslen( s ), 5 );
+  EXPECT_EQ( memcmp( s, binary_data, 5 ), 0 );
+
+  // Test concatenating binary data
+  s = sdscat( s, binary_data, sizeof( binary_data ) );
+  ASSERT_NE( s, nullptr );
+  EXPECT_EQ( sdslen( s ), 10 );
+
+  sdsfree( s );
+}
+
+/**
+ * Test large strings
+ */
+TEST_F( SDSTest, LargeStrings ) {
+  // Test string larger than 1MB to trigger different growth strategy
+  const size_t large_size = 2 * 1024 * 1024;  // 2MB
+  std::string  large_str( large_size, 'x' );
+
+  auto s_opt = sdsnew( large_str.c_str() );
+  ASSERT_TRUE( s_opt.has_value() );
+  sds s = *s_opt;
+
+  EXPECT_EQ( sdslen( s ), large_size );
+  EXPECT_EQ( s[ 0 ], 'x' );
+  EXPECT_EQ( s[ large_size - 1 ], 'x' );
+
+  sdsfree( s );
+}
+
+GTEST_API_ int main( int argc, char** argv ) {
+  testing::InitGoogleTest( &argc, argv );
+  return RUN_ALL_TESTS();
+}

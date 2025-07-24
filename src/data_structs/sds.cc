@@ -61,10 +61,14 @@ std::optional< sds > _sdsnewlen( const void* init, size_t initlen, bool try_mall
   }
 
   sds buf = static_cast< char* >( new_sds ) + hdr_len;
-  sdssetlen( buf, initlen );
-  sdssetalloc( buf, usable );
+
+  // Set the type flag in the byte before the buffer
   uint8_t* flag = ( (uint8_t*)buf ) - 1;
   *flag         = static_cast< uint8_t >( hdr_type );
+
+  // Set length and allocation size
+  sdssetlen( buf, initlen );
+  sdssetalloc( buf, usable );
 
   if ( initlen && init ) {
     memcpy( buf, init, initlen );
@@ -135,7 +139,6 @@ sds sdsMakeRoomFor( sds s, size_t addlen ) {
   size_t newlen = len + addlen;
 
   // Growth strategy: double the size if less than 1MB, otherwise add 1MB
-  size_t reqlen = newlen;
   if ( newlen < 1024 * 1024 ) {
     newlen *= 2;
   } else {
@@ -221,7 +224,7 @@ sds sdscat( sds s, const char* t ) {
  */
 sds sdscat( sds s, const sds t ) {
   if ( t == nullptr ) return s;
-  return sdscat( s, t, sdslen( t ) );
+  return sdscat( s, static_cast< const void* >( t ), sdslen( t ) );
 }
 
 /**
@@ -235,7 +238,6 @@ sds sdscpy( sds s, const void* t, size_t len ) {
   if ( s == nullptr ) return nullptr;
   if ( t == nullptr ) len = 0;
 
-  size_t total_size = len;
   if ( sdsalloc( s ) < len ) {
     s = sdsMakeRoomFor( s, len - sdslen( s ) );
     if ( s == nullptr ) return nullptr;
