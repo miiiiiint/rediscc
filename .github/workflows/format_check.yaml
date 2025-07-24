@@ -1,21 +1,144 @@
-name: Clang-Format Check
+name: Code Format Check
 
-on: [push,pull_request]
+on:
+  push:
+    branches: [ main, develop, unstable ]
+  pull_request:
+    branches: [ main, develop, unstable ]
+
+env:
+  # Tool versions
+  CLANG_FORMAT_VERSION: "18"
+  CMAKE_FORMAT_VERSION: "0.6.13"
+  PRETTIER_VERSION: "3.0.0"
 
 jobs:
   format-check:
+    name: Format Check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Fetch full history for incremental checks
+          fetch-depth: 0
+          # Ensure we have the target branch for comparison
+          ref: ${{ github.head_ref }}
 
-      - name: Set up clang-format
-        run: |
-          sudo apt update
-          sudo apt install clang-format-18
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
-      - name: Find files and format check 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Cache tools
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.npm
+            /usr/local/bin/clang-format*
+            /usr/local/bin/clang-tidy*
+          key: format-tools-${{ runner.os }}-${{ env.CLANG_FORMAT_VERSION }}-${{ env.CMAKE_FORMAT_VERSION }}-${{ env.PRETTIER_VERSION }}
+          restore-keys: |
+            format-tools-${{ runner.os }}-
+
+      - name: Install formatting tools
         run: |
-          sudo chmod +x format_check.sh
-          ./format_check.sh
+          # Install clang-format and clang-tidy
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${{ env.CLANG_FORMAT_VERSION }} main" | sudo tee /etc/apt/sources.list.d/llvm.list
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-format-${{ env.CLANG_FORMAT_VERSION }} \
+            clang-tidy-${{ env.CLANG_FORMAT_VERSION }} \
+            shellcheck
+
+          # Create symlinks for easier access
+          sudo ln -sf /usr/bin/clang-format-${{ env.CLANG_FORMAT_VERSION }} /usr/local/bin/clang-format
+          sudo ln -sf /usr/bin/clang-tidy-${{ env.CLANG_FORMAT_VERSION }} /usr/local/bin/clang-tidy
+
+          # Install Python tools
+          pip install cmake-format==${{ env.CMAKE_FORMAT_VERSION }}
+
+          # Install Node.js tools
+          npm install -g prettier@${{ env.PRETTIER_VERSION }}
+
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/format_check.sh
+          chmod +x scripts/format_fix.sh
+
+      - name: Run format check (incremental)
+        if: github.event_name == 'pull_request'
+        run: |
+          # For PRs, check only changed files
+          scripts/format_check.sh --incremental --branch origin/${{ github.base_ref }} --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run format check (full)
+        if: github.event_name == 'push'
+        run: |
+          # For pushes to main branches, check all files
+          scripts/format_check.sh --verbose
+
+      - name: Upload format check report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: format-check-report
+          path: format_check_report.txt
+          retention-days: 7
+
+      - name: Comment PR with format issues
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'format_check_report.txt';
+
+            if (fs.existsSync(path)) {
+              const report = fs.readFileSync(path, 'utf8');
+
+              const comment = `## 🔧 Format Check Failed
+
+              The code format check found issues that need to be fixed.
+
+              ### Summary Report
+              \`\`\`
+              ${report}
+              \`\`\`
+
+              ### How to fix
+
+              You can automatically fix most issues by running:
+              \`\`\`bash
+              ./scripts/format_fix.sh --incremental
+              \`\`\`
+
+              Or fix specific tools:
+              \`\`\`bash
+              ./scripts/format_fix.sh --tools clang-format,prettier
+              \`\`\`
+
+              After fixing, commit and push the changes.
+              `;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }

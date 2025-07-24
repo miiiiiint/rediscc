@@ -13,26 +13,50 @@
  * 0               1                7
  * |  encode_type  |   uint data    |
  */
-constexpr const size_t lp_encoding_7bit_uint            = 0;
-constexpr const size_t lp_encoding_7bit_uint_mask       = 0x80;
-constexpr const size_t lp_encoding_7bit_uint_entry_size = 2;
+[[maybe_unused]]
+constexpr const size_t lp_encoding_7bit_uint
+    = 0;
+[[maybe_unused]]
+constexpr const size_t lp_encoding_7bit_uint_mask
+    = 0x80;
+[[maybe_unused]]
+constexpr const size_t lp_encoding_7bit_uint_entry_size
+    = 2;
 
-#define LP_ENCODING_INT_MAGIC( bit_size, flag, mask, entry_size )                \
-  constexpr const size_t lp_encoding_##bit_size##bit_int            = flag;      \
-  constexpr const size_t lp_encoding_##bit_size##bit_int_mask       = mask;      \
-  constexpr const size_t lp_encoding_##bit_size##bit_int_entry_size = entry_size
+#define LP_ENCODING_INT_MAGIC( bit_size, flag, mask, entry_size )                                  \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_int                                           \
+      = flag;                                                                                      \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_int_mask                                      \
+      = mask;                                                                                      \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_int_entry_size                                \
+      = entry_size
 
-#define LP_ENCODING_UINT_MAGIC( bit_size, flag, mask, entry_size )                \
-  constexpr const size_t lp_encoding_##bit_size##bit_uint            = flag;      \
-  constexpr const size_t lp_encoding_##bit_size##bit_uint_mask       = mask;      \
-  constexpr const size_t lp_encoding_##bit_size##bit_uint_entry_size = entry_size
+#define LP_ENCODING_UINT_MAGIC( bit_size, flag, mask, entry_size )                                 \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_uint                                          \
+      = flag;                                                                                      \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_uint_mask                                     \
+      = mask;                                                                                      \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_uint_entry_size                               \
+      = entry_size
 
-#define LP_ENCODING_STR_MAGIC( bit_size, flag, mask, entry_size )                \
-  constexpr const size_t lp_encoding_##bit_size##bit_str            = flag;      \
-  constexpr const size_t lp_encoding_##bit_size##bit_str_mask       = mask;      \
-  constexpr const size_t lp_encoding_##bit_size##bit_str_entry_size = entry_size
+#define LP_ENCODING_STR_MAGIC( bit_size, flag, mask, entry_size )                                  \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_str                                           \
+      = flag;                                                                                      \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_str_mask                                      \
+      = mask;                                                                                      \
+  [[maybe_unused]]                                                                                 \
+  constexpr const size_t lp_encoding_##bit_size##bit_str_entry_size                                \
+      = entry_size
 
-#define LP_ENCODING_MAGIC( type, bit, flag, mask, entry_size ) \
+#define LP_ENCODING_MAGIC( type, bit, flag, mask, entry_size )                                     \
   LP_ENCODING_##type##_MAGIC( bit, flag, mask, entry_size )
 
 LP_ENCODING_MAGIC( INT, 7, 0, 0x80, 2 );
@@ -54,6 +78,7 @@ constexpr static inline size_t lpGetTotalBytes( listpack lp ) {
   return lp[ 0 ] << 0 | lp[ 1 ] << 8 | lp[ 2 ] << 16 | lp[ 3 ] << 24;
 }
 
+[[maybe_unused]]
 constexpr static inline size_t lpGetNumElements( listpack lp ) {
   return lp[ 5 ] << 0 | lp[ 6 ] << 8;
 }
@@ -62,8 +87,13 @@ constexpr static inline bool isIntegrity( listpack lp, listpack p ) {
   return p >= lp + lp_hdr_size && p < lp + lpGetTotalBytes( lp );
 }
 
-constexpr static listpack lpSkip( listpack lp ) {}
+constexpr static listpack lpSkip( listpack lp ) {
+  // TODO: Implement lpSkip function
+  (void)lp;  // Suppress unused parameter warning
+  return nullptr;
+}
 
+[[maybe_unused]]
 constexpr static std::optional< listpack > lpInsert( listpack    lp,
                                                      const char* ele_str,
                                                      const char* ele_int,
@@ -71,6 +101,12 @@ constexpr static std::optional< listpack > lpInsert( listpack    lp,
                                                      listpack    p,
                                                      insert_type where,
                                                      char**      new_p ) {
+  // Suppress unused parameter warnings
+  (void)ele_str;
+  (void)ele_int;
+  (void)size;
+  (void)new_p;
+
   if ( ele_str == nullptr && ele_int == nullptr ) {
     where = insert_type::lp_replace;
   }
@@ -80,6 +116,9 @@ constexpr static std::optional< listpack > lpInsert( listpack    lp,
     where = insert_type::lp_before;
     rediscc_assert( isIntegrity( lp, p ), "" );
   }
+
+  // TODO: Implement lpInsert function
+  return std::nullopt;
 }
 
 std::optional< listpack > lpNew( size_t capacity ) {

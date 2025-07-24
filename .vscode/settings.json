@@ -61,4 +61,7 @@
   "doxdocgen.generic.useGitUserName": true,
   "doxdocgen.generic.commandSuggestion": true,
   "doxdocgen.generic.commandSuggestionAddPrefix": true,
+  "files.associations": {
+    "vector": "cpp"
+  },
 }

@@ -3,6 +3,7 @@ project(rediscc VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -fsanitize=address -O2 -g")
 
@@ -76,4 +77,10 @@ if(ENABLE_TESTING_BUILD)
 
   add_subdirectory(tests)
 endif(ENABLE_TESTING_BUILD)
+
+# Add examples
+option(ENABLE_EXAMPLES_BUILD "enable examples build" ON)
+if(ENABLE_EXAMPLES_BUILD)
+  add_subdirectory(examples)
+endif(ENABLE_EXAMPLES_BUILD)
 

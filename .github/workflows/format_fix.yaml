@@ -1,0 +1,263 @@
+name: Auto-Fix Code Format
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Target branch to compare against'
+        required: false
+        default: 'main'
+      tools:
+        description: 'Comma-separated list of tools to run (leave empty for all)'
+        required: false
+        default: ''
+      create_pr:
+        description: 'Create a pull request with fixes'
+        type: boolean
+        required: false
+        default: true
+
+  # Allow manual trigger from PR comments
+  issue_comment:
+    types: [created]
+
+env:
+  CLANG_FORMAT_VERSION: "18"
+  CMAKE_FORMAT_VERSION: "0.6.13"
+  PRETTIER_VERSION: "3.0.0"
+
+jobs:
+  check-trigger:
+    name: Check Trigger
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment'
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      pr_number: ${{ steps.check.outputs.pr_number }}
+      pr_head_ref: ${{ steps.check.outputs.pr_head_ref }}
+    steps:
+      - name: Check comment trigger
+        id: check
+        run: |
+          comment="${{ github.event.comment.body }}"
+          if [[ "$comment" =~ ^/format-fix ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "pr_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            
+            # Get PR head ref
+            pr_data=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}")
+            head_ref=$(echo "$pr_data" | jq -r '.head.ref')
+            echo "pr_head_ref=$head_ref" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+  auto-fix:
+    name: Auto-Fix Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'issue_comment' && needs.check-trigger.outputs.should_run == 'true')
+    needs: [check-trigger]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event_name == 'issue_comment' && needs.check-trigger.outputs.pr_head_ref || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Cache tools
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.npm
+            /usr/local/bin/clang-format*
+            /usr/local/bin/clang-tidy*
+          key: format-tools-${{ runner.os }}-${{ env.CLANG_FORMAT_VERSION }}-${{ env.CMAKE_FORMAT_VERSION }}-${{ env.PRETTIER_VERSION }}
+
+      - name: Install formatting tools
+        run: |
+          # Install clang-format and clang-tidy
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${{ env.CLANG_FORMAT_VERSION }} main" | sudo tee /etc/apt/sources.list.d/llvm.list
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-format-${{ env.CLANG_FORMAT_VERSION }} \
+            clang-tidy-${{ env.CLANG_FORMAT_VERSION }} \
+            shellcheck
+          
+          sudo ln -sf /usr/bin/clang-format-${{ env.CLANG_FORMAT_VERSION }} /usr/local/bin/clang-format
+          sudo ln -sf /usr/bin/clang-tidy-${{ env.CLANG_FORMAT_VERSION }} /usr/local/bin/clang-tidy
+          
+          pip install cmake-format==${{ env.CMAKE_FORMAT_VERSION }}
+          npm install -g prettier@${{ env.PRETTIER_VERSION }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/format_check.sh
+          chmod +x scripts/format_fix.sh
+
+      - name: Run auto-fix
+        id: fix
+        run: |
+          # Determine target branch
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            target_branch="${{ github.event.inputs.target_branch }}"
+            tools="${{ github.event.inputs.tools }}"
+          else
+            target_branch="origin/main"
+            tools=""
+          fi
+          
+          # Build fix command
+          fix_args=("--incremental" "--branch" "$target_branch" "--verbose" "--no-backup")
+          
+          if [[ -n "$tools" ]]; then
+            fix_args+=("--tools" "$tools")
+          fi
+          
+          echo "Running: scripts/format_fix.sh ${fix_args[*]}"
+          
+          # Run the fix
+          if scripts/format_fix.sh "${fix_args[@]}"; then
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes were made"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected:"
+            git status --porcelain
+          fi
+
+      - name: Commit changes
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git add .
+          git commit -m "fix: auto-format code
+          
+          - Applied clang-format for C++ files
+          - Applied cmake-format for CMake files
+          - Applied prettier for JSON/YAML/Markdown files
+          - Applied shellcheck fixes where possible
+          
+          Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+      - name: Create Pull Request
+        if: |
+          steps.changes.outputs.has_changes == 'true' && 
+          github.event_name == 'workflow_dispatch' && 
+          github.event.inputs.create_pr == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "fix: auto-format code"
+          title: "🔧 Auto-fix code formatting issues"
+          body: |
+            ## Auto-Fix Code Formatting
+            
+            This PR was automatically created to fix code formatting issues.
+            
+            ### Changes Made
+            - Applied clang-format for C++ files
+            - Applied cmake-format for CMake files  
+            - Applied prettier for JSON/YAML/Markdown files
+            - Applied shellcheck fixes where possible
+            
+            ### Tools Used
+            - clang-format ${{ env.CLANG_FORMAT_VERSION }}
+            - cmake-format ${{ env.CMAKE_FORMAT_VERSION }}
+            - prettier ${{ env.PRETTIER_VERSION }}
+            - shellcheck (latest)
+            
+            Please review the changes and merge if they look correct.
+          branch: auto-fix/format-${{ github.run_number }}
+          delete-branch: true
+
+      - name: Push changes to PR branch
+        if: |
+          steps.changes.outputs.has_changes == 'true' && 
+          github.event_name == 'issue_comment'
+        run: |
+          git push origin HEAD
+
+      - name: Comment on PR
+        if: |
+          github.event_name == 'issue_comment' && 
+          steps.changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const comment = `## ✅ Auto-Fix Applied
+            
+            I've automatically fixed the formatting issues in this PR.
+            
+            ### Changes Made
+            - Applied clang-format for C++ files
+            - Applied cmake-format for CMake files
+            - Applied prettier for JSON/YAML/Markdown files
+            - Applied shellcheck fixes where possible
+            
+            The changes have been pushed to this branch. Please review and let me know if everything looks good!
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: ${{ needs.check-trigger.outputs.pr_number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Comment on PR (no changes)
+        if: |
+          github.event_name == 'issue_comment' && 
+          steps.changes.outputs.has_changes == 'false'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: ${{ needs.check-trigger.outputs.pr_number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "## ✅ No Format Issues Found\n\nI checked the code formatting and everything looks good! No changes were needed."
+            });
+
+      - name: Upload fix report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: format-fix-report
+          path: |
+            format_check_report.txt
+            .format_backup_*
+          retention-days: 7

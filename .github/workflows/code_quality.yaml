@@ -1,0 +1,282 @@
+name: Code Quality Check
+
+on:
+  push:
+    branches: [ main, develop, unstable ]
+  pull_request:
+    branches: [ main, develop, unstable ]
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+env:
+  BUILD_TYPE: Debug
+  CLANG_TIDY_VERSION: "18"
+
+jobs:
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup build environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            clang-${{ env.CLANG_TIDY_VERSION }} \
+            clang-tidy-${{ env.CLANG_TIDY_VERSION }} \
+            clang-format-${{ env.CLANG_TIDY_VERSION }} \
+            valgrind \
+            cppcheck
+
+          # Create symlinks
+          sudo ln -sf /usr/bin/clang-${{ env.CLANG_TIDY_VERSION }} /usr/local/bin/clang
+          sudo ln -sf /usr/bin/clang++-${{ env.CLANG_TIDY_VERSION }} /usr/local/bin/clang++
+          sudo ln -sf /usr/bin/clang-tidy-${{ env.CLANG_TIDY_VERSION }} /usr/local/bin/clang-tidy
+
+      - name: Cache build dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            build/deps
+            ~/.cache/pip
+          key: build-deps-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            build-deps-${{ runner.os }}-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENABLE_TESTING_BUILD=ON \
+            -DENABLE_EXAMPLES_BUILD=ON \
+            -G Ninja
+
+      - name: Build project
+        run: cmake --build build --config ${{ env.BUILD_TYPE }}
+
+      - name: Run clang-tidy
+        run: |
+          echo "Running clang-tidy analysis..."
+          
+          # Create output directory
+          mkdir -p analysis-reports
+          
+          # Find C++ source files
+          find include src -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" | \
+          while read -r file; do
+            echo "Analyzing: $file"
+            clang-tidy "$file" -p build --format-style=file \
+              --export-fixes="analysis-reports/$(basename "$file").yaml" \
+              >> analysis-reports/clang-tidy-report.txt 2>&1 || true
+          done
+          
+          echo "clang-tidy analysis completed"
+
+      - name: Run cppcheck
+        run: |
+          echo "Running cppcheck analysis..."
+          
+          cppcheck \
+            --enable=all \
+            --inconclusive \
+            --std=c++20 \
+            --language=c++ \
+            --platform=unix64 \
+            --suppress=missingIncludeSystem \
+            --suppress=unmatchedSuppression \
+            --suppress=unusedFunction \
+            --xml \
+            --xml-version=2 \
+            --output-file=analysis-reports/cppcheck-report.xml \
+            include/ src/ 2>&1 || true
+          
+          # Convert XML to text for easier reading
+          if command -v xmllint >/dev/null 2>&1; then
+            xmllint --format analysis-reports/cppcheck-report.xml > analysis-reports/cppcheck-report-formatted.xml
+          fi
+          
+          echo "cppcheck analysis completed"
+
+      - name: Generate analysis summary
+        run: |
+          echo "# Code Quality Analysis Report" > analysis-reports/summary.md
+          echo "Generated: $(date)" >> analysis-reports/summary.md
+          echo "" >> analysis-reports/summary.md
+          
+          # clang-tidy summary
+          echo "## clang-tidy Results" >> analysis-reports/summary.md
+          if [[ -f analysis-reports/clang-tidy-report.txt ]]; then
+            warning_count=$(grep -c "warning:" analysis-reports/clang-tidy-report.txt || echo "0")
+            error_count=$(grep -c "error:" analysis-reports/clang-tidy-report.txt || echo "0")
+            echo "- Warnings: $warning_count" >> analysis-reports/summary.md
+            echo "- Errors: $error_count" >> analysis-reports/summary.md
+            
+            if [[ $warning_count -gt 0 || $error_count -gt 0 ]]; then
+              echo "" >> analysis-reports/summary.md
+              echo "### Top Issues:" >> analysis-reports/summary.md
+              grep -E "(warning:|error:)" analysis-reports/clang-tidy-report.txt | head -10 >> analysis-reports/summary.md || true
+            fi
+          else
+            echo "- No clang-tidy report generated" >> analysis-reports/summary.md
+          fi
+          
+          echo "" >> analysis-reports/summary.md
+          
+          # cppcheck summary
+          echo "## cppcheck Results" >> analysis-reports/summary.md
+          if [[ -f analysis-reports/cppcheck-report.xml ]]; then
+            error_count=$(grep -c '<error' analysis-reports/cppcheck-report.xml || echo "0")
+            echo "- Issues found: $error_count" >> analysis-reports/summary.md
+            
+            if [[ $error_count -gt 0 ]]; then
+              echo "" >> analysis-reports/summary.md
+              echo "### Issue Types:" >> analysis-reports/summary.md
+              grep -o 'severity="[^"]*"' analysis-reports/cppcheck-report.xml | sort | uniq -c >> analysis-reports/summary.md || true
+            fi
+          else
+            echo "- No cppcheck report generated" >> analysis-reports/summary.md
+          fi
+          
+          echo "" >> analysis-reports/summary.md
+          echo "## Files Analyzed" >> analysis-reports/summary.md
+          find include src -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" | wc -l | \
+            xargs echo "- Total files:" >> analysis-reports/summary.md
+
+      - name: Upload analysis reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-quality-reports
+          path: analysis-reports/
+          retention-days: 30
+
+      - name: Comment PR with analysis results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'analysis-reports/summary.md';
+            
+            if (fs.existsSync(path)) {
+              const summary = fs.readFileSync(path, 'utf8');
+              
+              const comment = `## 🔍 Code Quality Analysis Results
+              
+              ${summary}
+              
+              📊 **Full reports are available in the [workflow artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).**
+              
+              ---
+              *This analysis was performed using clang-tidy and cppcheck.*
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+      - name: Check analysis results
+        run: |
+          # Fail the job if there are critical issues
+          if [[ -f analysis-reports/clang-tidy-report.txt ]]; then
+            error_count=$(grep -c "error:" analysis-reports/clang-tidy-report.txt || echo "0")
+            if [[ $error_count -gt 0 ]]; then
+              echo "❌ Found $error_count clang-tidy errors"
+              echo "Please fix the errors before merging"
+              exit 1
+            fi
+          fi
+          
+          if [[ -f analysis-reports/cppcheck-report.xml ]]; then
+            critical_count=$(grep -c 'severity="error"' analysis-reports/cppcheck-report.xml || echo "0")
+            if [[ $critical_count -gt 0 ]]; then
+              echo "❌ Found $critical_count critical cppcheck issues"
+              echo "Please fix the critical issues before merging"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ No critical issues found"
+
+  memory-check:
+    name: Memory Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'pull_request' || github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup build environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            clang \
+            valgrind
+
+      - name: Configure CMake (Debug with sanitizers)
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer" \
+            -DENABLE_TESTING_BUILD=ON \
+            -G Ninja
+
+      - name: Build project
+        run: cmake --build build --config Debug
+
+      - name: Run tests with AddressSanitizer
+        run: |
+          cd build
+          export ASAN_OPTIONS="detect_leaks=1:abort_on_error=1"
+          export UBSAN_OPTIONS="abort_on_error=1"
+          ctest --output-on-failure --timeout 300
+
+      - name: Run Valgrind memory check
+        if: always()
+        run: |
+          cd build
+          # Run a subset of tests with Valgrind (it's slow)
+          valgrind \
+            --tool=memcheck \
+            --leak-check=full \
+            --show-leak-kinds=all \
+            --track-origins=yes \
+            --verbose \
+            --error-exitcode=1 \
+            --suppressions=../valgrind.supp \
+            ./tests/log_test 2>&1 | tee ../valgrind-report.txt || true
+
+      - name: Upload memory check reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: memory-check-reports
+          path: |
+            valgrind-report.txt
+          retention-days: 7

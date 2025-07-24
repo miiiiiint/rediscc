@@ -4,7 +4,7 @@ using namespace std;
 
 // 函数：打印一个整数数组
 void printArray( const vector< int >& arr ) {
-  for ( int i = 0; i < arr.size(); i++ ) {
+  for ( size_t i = 0; i < arr.size(); i++ ) {
     cout << arr[ i ] << " ";
   }
   cout << endl;
@@ -13,7 +13,7 @@ void printArray( const vector< int >& arr ) {
 // 函数：计算数组中所有元素的和
 int sumArray( const vector< int >& arr ) {
   int sum = 0;
-  for ( int i = 0; i < arr.size(); i++ ) {
+  for ( size_t i = 0; i < arr.size(); i++ ) {
     sum += arr[ i ];
   }
   return sum;
